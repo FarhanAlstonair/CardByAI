@@ -7,7 +7,7 @@ import {
   Settings,
   Sparkles,
   LogOut,
-  User
+  User as UserIcon
 } from "lucide-react";
 import {
   Sidebar,
@@ -98,7 +98,7 @@ export function AppSidebar({ user, onLogout }: AppSidebarProps) {
     {
       title: "Profile",
       url: "/profile",
-      icon: User,
+      icon: UserIcon,
       isActive: location === "/profile"
     },
     {
