@@ -1,0 +1,200 @@
+You are a senior full-stack engineer, hackathon expert (100+ wins), product owner, UI/UX designer, and prompt engineering specialist. Build a complete SaaS application that generates AI-powered business and visiting cards with full editing capabilities. The SaaS must be high-quality, scalable, hackathon-ready, and follow the Stitch by Google UI/UX style (modern, minimal, intuitive).
+
+The app should include a user-facing dashboard for generating and editing cards and an admin dashboard for monitoring users, cards, and AI usage. Generate all code for frontend and backend as a single Replit project, with environment variable placeholders for secrets, fully functional, ready to run, and optimized for hackathon submission.
+
+1️⃣ Tech Stack
+
+Frontend: React + TailwindCSS + Vite
+
+Backend: FastAPI (Python)
+
+Database: PostgreSQL via Supabase
+
+Image Storage: Cloudinary
+
+AI: Cerebras (main) + HuggingFace LLaMA (optional secondary AI)
+
+Authentication: Google OAuth
+
+Deployment: Replit (optional Dockerfile included)
+
+Caching: Redis or in-memory for repeated AI requests
+
+2️⃣ Features
+A) User Authentication
+
+Google OAuth login with backend session handling
+
+Endpoints:
+
+/login → redirect to Google OAuth
+
+/auth/callback → fetch user info, store in Supabase
+
+/me → get current user info
+
+/logout → log out
+
+Role-based access: user / admin
+
+JWT or session-based authentication
+
+B) AI-Powered Card Generation
+
+Endpoint: POST /cards/generate
+
+Request:
+
+{
+  "prompt": "<user input>",
+  "style": "modern|classic|minimal",
+  "color": "<optional>",
+  "layout": "<optional>"
+}
+
+
+Response:
+
+{
+  "text": "<generated card text>",
+  "image_url": "<Cloudinary URL>",
+  "generated_at": "<timestamp>"
+}
+
+
+Use Cerebras API for main content generation
+
+Use HuggingFace LLaMA optionally for alternative styles
+
+Implement caching per user to avoid repeated API calls
+
+Cards must be fully editable: text, fonts, color, layout, drag & drop elements
+
+Save final editable card to Cloudinary and store URL in database
+
+C) Cards Management
+
+CRUD endpoints:
+
+GET /cards → list user cards
+
+GET /cards/{id} → get single card details
+
+PATCH /cards/{id} → edit card text/color/layout
+
+DELETE /cards/{id} → delete card
+
+Display cards in grid view with drag & drop editing
+
+Card preview mode before saving
+
+D) Admin Dashboard
+
+List all users and cards
+
+Track:
+
+Total users onboarded
+
+AI usage metrics (cards generated per user)
+
+Flagged content moderation
+
+Approve, remove, or export data
+
+Role-based access enforced in backend
+
+3️⃣ Backend (FastAPI) Structure
+backend/
+ ├─ main.py          # FastAPI app entry
+ ├─ auth.py          # Google OAuth routes
+ ├─ cards.py         # Card CRUD + AI integration
+ ├─ admin.py         # Admin routes and stats
+ ├─ db.py            # Supabase connection
+ ├─ models.py        # SQLAlchemy models: User, Card, Admin
+ ├─ utils.py         # Cerebras API, HuggingFace API, Cloudinary upload, caching
+ └─ requirements.txt # fastapi, sqlalchemy, requests, cloudinary, python-dotenv, etc.
+
+4️⃣ Frontend (React + Tailwind) Structure
+frontend/
+ ├─ src/components/
+ │   ├─ Button.tsx
+ │   ├─ Modal.tsx
+ │   ├─ CardCanvas.tsx  # Drag & drop editor
+ │   ├─ NavBar.tsx
+ │   └─ AdminTable.tsx
+ ├─ src/pages/
+ │   ├─ Dashboard.tsx
+ │   ├─ CardCreate.tsx
+ │   ├─ CardEdit.tsx
+ │   ├─ CardDetail.tsx
+ │   ├─ Login.tsx
+ │   └─ AdminDashboard.tsx
+ ├─ src/services/
+ │   ├─ api.ts          # API calls
+ │   ├─ auth.ts         # Auth functions
+ │   └─ cards.ts        # Card CRUD + AI
+ └─ src/styles/
+     └─ tailwind.config.js
+
+Frontend Features
+
+Drag & drop editing for cards
+
+Editable text, color, images, icons
+
+Responsive Stitch-style UI
+
+Admin panel for users and AI metrics
+
+5️⃣ Environment Variables / Secrets
+
+GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
+
+SUPABASE_URL / SUPABASE_KEY
+
+CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET
+
+CEREBRAS_API_KEY
+
+HUGGINGFACE_API_TOKEN
+
+6️⃣ Deployment
+
+Replit-ready: https://<repl-name>.<username>.repl.co
+
+Optional Dockerfile for containerization
+
+Automatic HTTPS via Replit
+
+Full integration: frontend ↔ backend ↔ AI ↔ database ↔ storage
+
+Async handling for AI calls to prevent request blocking
+
+7️⃣ Hackathon Enhancements
+
+Multi-sponsor tech integration: Cerebras, HuggingFace LLaMA, Docker
+
+Stitch-by-Google UX for modern, minimal, intuitive feel
+
+User caching for repeated AI prompts
+
+Fully functional user + admin dashboards
+
+Editable card elements: text, color, layout, images
+
+Scalable backend: Supabase + Cloudinary
+
+FastAPI handles async AI requests efficiently
+
+8️⃣ Output Requirements
+
+Full project structure with all code files
+
+Ready to run on Replit
+
+Includes frontend, backend, AI integration, database models, admin panel
+
+Placeholders for secrets included
+
+Hackathon-ready MVP
