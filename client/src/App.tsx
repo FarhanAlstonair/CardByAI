@@ -9,36 +9,70 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 // Page components
 import NotFound from "@/pages/not-found";
-import LoginFormExample from "@/components/examples/LoginForm";
-import UserDashboardExample from "@/components/examples/UserDashboard";
-import CardEditorExample from "@/components/examples/CardEditor";
-import AdminDashboardExample from "@/components/examples/AdminDashboard";
+import LoginForm from "@/components/auth/LoginForm";
+import Dashboard from "@/components/dashboard/Dashboard";
+import ProjectsDashboard from "@/components/dashboard/ProjectsDashboard";
+import CardEditor from "@/components/cards/CardEditor";
+import AdvancedCanvasEditor from "@/components/editor/AdvancedCanvasEditor";
+import AdminDashboard from "@/components/admin/AdminDashboard";
+import { useState, useEffect } from "react";
+import { api } from "@/services/api";
+import type { User } from "@shared/schema";
 
-function Router() {
+function Router({ user }: { user: User | null }) {
+  if (!user) {
+    return <LoginForm />;
+  }
+
   return (
     <Switch>
-      {/* Authentication */}
-      <Route path="/login" component={LoginFormExample} />
-      
       {/* Main Dashboard */}
-      <Route path="/" component={UserDashboardExample} />
-      <Route path="/dashboard" component={UserDashboardExample} />
+      <Route path="/" component={() => <ProjectsDashboard userId={user.id} />} />
+      <Route path="/dashboard" component={() => <ProjectsDashboard userId={user.id} />} />
       
       {/* Card Management */}
-      <Route path="/cards" component={UserDashboardExample} />
-      <Route path="/create" component={CardEditorExample} />
-      <Route path="/edit/:cardId" component={CardEditorExample} />
-      <Route path="/ai-generate" component={CardEditorExample} />
+      <Route path="/cards" component={() => <ProjectsDashboard userId={user.id} />} />
+      <Route path="/create" component={() => (
+        <AdvancedCanvasEditor
+          onSave={async (canvasData) => {
+            console.log('Saving design:', canvasData);
+          }}
+        />
+      )} />
+      <Route path="/ai-generate" component={() => (
+        <AdvancedCanvasEditor
+          onSave={async (canvasData) => {
+            console.log('Saving AI design:', canvasData);
+          }}
+        />
+      )} />
       
       {/* Admin */}
-      <Route path="/admin" component={AdminDashboardExample} />
-      <Route path="/admin/users" component={AdminDashboardExample} />
+      {user.role === 'admin' && (
+        <>
+          <Route path="/admin" component={AdminDashboard} />
+          <Route path="/admin/users" component={AdminDashboard} />
+        </>
+      )}
       
       {/* Settings & Profile */}
       <Route path="/profile" component={() => (
         <div className="p-6">
           <h1 className="text-2xl font-bold mb-4">Profile Settings</h1>
-          <p className="text-muted-foreground">Manage your profile information and preferences.</p>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Name</label>
+              <p className="text-lg">{user.name}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Email</label>
+              <p className="text-lg">{user.email}</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Role</label>
+              <p className="text-lg capitalize">{user.role}</p>
+            </div>
+          </div>
         </div>
       )} />
       <Route path="/settings" component={() => (
@@ -55,16 +89,56 @@ function Router() {
 }
 
 function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    try {
+      const response = await api.getMe();
+      setUser(response.user);
+    } catch (error) {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+      setUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <LoginForm onLogin={checkAuth} />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
+
   // Custom sidebar width for business card application
   const style = {
     "--sidebar-width": "18rem",        // 288px for better content
     "--sidebar-width-icon": "4rem",   // default icon width
-  };
-
-  const handleLogout = () => {
-    console.log('User logged out');
-    // In a real app, this would clear auth state and redirect to login
-    window.location.href = '/login';
   };
 
   return (
@@ -72,7 +146,7 @@ function App() {
       <TooltipProvider>
         <SidebarProvider style={style as React.CSSProperties}>
           <div className="flex h-screen w-full">
-            <AppSidebar onLogout={handleLogout} />
+            <AppSidebar user={user} onLogout={handleLogout} />
             <div className="flex flex-col flex-1">
               <header className="flex items-center justify-between p-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="flex items-center gap-3">
@@ -84,7 +158,7 @@ function App() {
                 </div>
               </header>
               <main className="flex-1 overflow-auto">
-                <Router />
+                <Router user={user} />
               </main>
             </div>
           </div>

@@ -35,19 +35,11 @@ interface AppSidebarProps {
 export function AppSidebar({ user, onLogout }: AppSidebarProps) {
   const [location] = useLocation();
 
-  // Mock user data //todo: remove mock functionality
-  const mockUser: User = user || {
-    id: "1",
-    email: "sarah.j@techcorp.com",
-    name: "Sarah Johnson",
-    googleId: "google123",
-    avatar: "https://avatar.vercel.sh/sarah",
-    role: "user",
-    createdAt: new Date('2024-01-15'),
-    lastLogin: new Date('2024-01-20')
-  };
+  if (!user) {
+    return null;
+  }
 
-  const isAdmin = mockUser.role === 'admin';
+  const isAdmin = user.role === 'admin';
 
   // Main navigation items
   const mainItems = [
@@ -58,19 +50,19 @@ export function AppSidebar({ user, onLogout }: AppSidebarProps) {
       isActive: location === "/dashboard" || location === "/"
     },
     {
-      title: "My Cards",
+      title: "My Designs",
       url: "/cards",
       icon: CreditCard,
       isActive: location === "/cards"
     },
     {
-      title: "Create Card",
+      title: "Design Studio",
       url: "/create",
       icon: Plus,
       isActive: location === "/create"
     },
     {
-      title: "AI Generator",
+      title: "AI Designer",
       url: "/ai-generate",
       icon: Sparkles,
       isActive: location === "/ai-generate"
@@ -123,8 +115,8 @@ export function AppSidebar({ user, onLogout }: AppSidebarProps) {
             <Sparkles className="h-5 w-5 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="font-bold text-lg">CardCraft AI</h2>
-            <p className="text-xs text-muted-foreground">AI-Powered Cards</p>
+            <h2 className="font-bold text-lg">DesignCraft Pro</h2>
+            <p className="text-xs text-muted-foreground">Professional Design Suite</p>
           </div>
         </div>
       </SidebarHeader>
@@ -213,14 +205,14 @@ export function AppSidebar({ user, onLogout }: AppSidebarProps) {
           {/* User Profile */}
           <div className="flex items-center gap-3 p-2 rounded-lg bg-sidebar-accent/50">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={mockUser.avatar || ''} />
+              <AvatarImage src={user.avatar || ''} />
               <AvatarFallback className="text-xs">
-                {mockUser.name.slice(0, 2).toUpperCase()}
+                {user.name.slice(0, 2).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{mockUser.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{mockUser.email}</p>
+              <p className="text-sm font-medium truncate">{user.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
             {isAdmin && (
               <Badge variant="secondary" className="text-xs">

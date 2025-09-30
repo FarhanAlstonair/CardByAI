@@ -4,39 +4,27 @@ import { randomUUID } from "crypto";
 // Updated storage interface for the AI Business Card SaaS
 export interface IStorage {
   // User operations
-  getUser(id: string): Promise<User | undefined>;
+  getUserById(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserByGoogleId(googleId: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  insertUser(user: InsertUser): Promise<User>;
   updateUser(id: string, updates: Partial<User>): Promise<User>;
+  updateUserLastLogin(id: string): Promise<void>;
   
   // Business Card operations
-  getCard(id: string): Promise<BusinessCard | undefined>;
+  getCardById(id: string): Promise<BusinessCard | undefined>;
   getUserCards(userId: string): Promise<BusinessCard[]>;
-  createCard(card: InsertBusinessCard): Promise<BusinessCard>;
+  insertBusinessCard(card: InsertBusinessCard): Promise<BusinessCard>;
   updateCard(id: string, updates: Partial<BusinessCard>): Promise<BusinessCard>;
   deleteCard(id: string): Promise<boolean>;
-  getPublicCards(): Promise<BusinessCard[]>;
+  getAllCards(): Promise<BusinessCard[]>;
   
   // AI Usage tracking
-  createAiUsage(usage: InsertAiUsage): Promise<AiUsage>;
-  getUserAiUsage(userId: string): Promise<AiUsage[]>;
-  getAiUsageStats(): Promise<{
-    totalUsage: number;
-    todayUsage: number;
-    avgResponseTime: number;
-    successRate: number;
-  }>;
+  insertAiUsage(usage: InsertAiUsage): Promise<AiUsage>;
   
   // Admin operations
   getAllUsers(): Promise<User[]>;
-  getAllCards(): Promise<BusinessCard[]>;
-  getAllAiUsage(): Promise<AiUsage[]>;
-  getUserStats(): Promise<{
-    totalUsers: number;
-    activeToday: number;
-    newToday: number;
-  }>;
+  getAdminStats(): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -51,7 +39,7 @@ export class MemStorage implements IStorage {
   }
 
   // User operations
-  async getUser(id: string): Promise<User | undefined> {
+  async getUserById(id: string): Promise<User | undefined> {
     return this.users.get(id);
   }
 
@@ -63,7 +51,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(user => user.googleId === googleId);
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async insertUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
     const user: User = { 
       ...insertUser, 
@@ -84,8 +72,16 @@ export class MemStorage implements IStorage {
     return updatedUser;
   }
 
+  async updateUserLastLogin(id: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.lastLogin = new Date();
+      this.users.set(id, user);
+    }
+  }
+
   // Business Card operations
-  async getCard(id: string): Promise<BusinessCard | undefined> {
+  async getCardById(id: string): Promise<BusinessCard | undefined> {
     return this.cards.get(id);
   }
 
@@ -93,7 +89,7 @@ export class MemStorage implements IStorage {
     return Array.from(this.cards.values()).filter(card => card.userId === userId);
   }
 
-  async createCard(insertCard: InsertBusinessCard): Promise<BusinessCard> {
+  async insertBusinessCard(insertCard: InsertBusinessCard): Promise<BusinessCard> {
     const id = randomUUID();
     const card: BusinessCard = {
       ...insertCard,
@@ -122,12 +118,10 @@ export class MemStorage implements IStorage {
     return this.cards.delete(id);
   }
 
-  async getPublicCards(): Promise<BusinessCard[]> {
-    return Array.from(this.cards.values()).filter(card => card.isPublic);
-  }
+
 
   // AI Usage operations
-  async createAiUsage(insertUsage: InsertAiUsage): Promise<AiUsage> {
+  async insertAiUsage(insertUsage: InsertAiUsage): Promise<AiUsage> {
     const id = randomUUID();
     const usage: AiUsage = {
       ...insertUsage,
@@ -138,35 +132,7 @@ export class MemStorage implements IStorage {
     return usage;
   }
 
-  async getUserAiUsage(userId: string): Promise<AiUsage[]> {
-    return Array.from(this.aiUsage.values()).filter(usage => usage.userId === userId);
-  }
 
-  async getAiUsageStats(): Promise<{
-    totalUsage: number;
-    todayUsage: number;
-    avgResponseTime: number;
-    successRate: number;
-  }> {
-    const allUsage = Array.from(this.aiUsage.values());
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const todayUsage = allUsage.filter(usage => 
-      usage.createdAt >= today
-    );
-
-    const successfulUsage = allUsage.filter(usage => usage.success);
-    const avgResponseTime = allUsage.reduce((sum, usage) => 
-      sum + (usage.responseTime || 0), 0) / allUsage.length || 0;
-
-    return {
-      totalUsage: allUsage.length,
-      todayUsage: todayUsage.length,
-      avgResponseTime: Math.round(avgResponseTime),
-      successRate: allUsage.length > 0 ? successfulUsage.length / allUsage.length : 0,
-    };
-  }
 
   // Admin operations
   async getAllUsers(): Promise<User[]> {
@@ -177,31 +143,20 @@ export class MemStorage implements IStorage {
     return Array.from(this.cards.values());
   }
 
-  async getAllAiUsage(): Promise<AiUsage[]> {
-    return Array.from(this.aiUsage.values());
-  }
-
-  async getUserStats(): Promise<{
-    totalUsers: number;
-    activeToday: number;
-    newToday: number;
-  }> {
+  async getAdminStats(): Promise<any> {
     const users = Array.from(this.users.values());
+    const cards = Array.from(this.cards.values());
+    const usage = Array.from(this.aiUsage.values());
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const activeToday = users.filter(user => 
-      user.lastLogin && user.lastLogin >= today
-    );
-    
-    const newToday = users.filter(user => 
-      user.createdAt >= today
-    );
-
     return {
       totalUsers: users.length,
-      activeToday: activeToday.length,
-      newToday: newToday.length,
+      totalCards: cards.length,
+      totalAiGenerations: usage.length,
+      activeUsersToday: users.filter(u => u.lastLogin && u.lastLogin >= today).length,
+      cardsCreatedToday: cards.filter(c => c.createdAt >= today).length,
+      aiUsageToday: usage.filter(u => u.createdAt >= today).length
     };
   }
 }

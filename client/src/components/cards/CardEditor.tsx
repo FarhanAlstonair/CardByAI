@@ -20,7 +20,9 @@ import {
   Trash2
 } from "lucide-react";
 import { HexColorPicker } from "react-colorful";
-import type { BusinessCard, CardElement } from "@shared/schema";
+import type { BusinessCard, CardElement, AiGenerationRequest } from "@shared/schema";
+import { api } from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface CardEditorProps {
   card?: Partial<BusinessCard>;
@@ -30,6 +32,9 @@ interface CardEditorProps {
 }
 
 export default function CardEditor({ card, onSave, onAiGenerate, onExport }: CardEditorProps) {
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: card?.name || "",
     jobTitle: card?.jobTitle || "",
@@ -53,17 +58,68 @@ export default function CardEditor({ card, onSave, onAiGenerate, onExport }: Car
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleAiGenerate = () => {
-    if (aiPrompt.trim()) {
-      console.log('AI Generation requested:', aiPrompt);
+  const handleAiGenerate = async () => {
+    if (!aiPrompt.trim()) return;
+    
+    setIsGenerating(true);
+    try {
+      const request: AiGenerationRequest = {
+        prompt: aiPrompt,
+        style: formData.layout as any,
+        color: formData.backgroundColor
+      };
+      
+      const response = await api.generateCard(request);
+      
+      // Update form with AI suggestions
+      setFormData(prev => ({
+        ...prev,
+        name: response.suggestedName || prev.name,
+        jobTitle: response.suggestedJobTitle || prev.jobTitle,
+        company: response.suggestedCompany || prev.company,
+        email: response.suggestedEmail || prev.email,
+        phone: response.suggestedPhone || prev.phone,
+        website: response.suggestedWebsite || prev.website,
+        backgroundColor: response.suggestedColors?.background || prev.backgroundColor,
+        textColor: response.suggestedColors?.text || prev.textColor,
+        accentColor: response.suggestedColors?.accent || prev.accentColor
+      }));
+      
+      toast({
+        title: "AI Generated!",
+        description: "Your business card has been generated with AI."
+      });
+      
       onAiGenerate?.(aiPrompt, formData.layout);
       setAiPrompt("");
+    } catch (error) {
+      toast({
+        title: "Generation Failed",
+        description: error instanceof Error ? error.message : "Failed to generate card",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  const handleSave = () => {
-    console.log('Saving card:', formData);
-    onSave?.(formData);
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await onSave?.(formData);
+      toast({
+        title: "Card Saved!",
+        description: "Your business card has been saved successfully."
+      });
+    } catch (error) {
+      toast({
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Failed to save card",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleExport = () => {
@@ -99,11 +155,11 @@ export default function CardEditor({ card, onSave, onAiGenerate, onExport }: Car
               <Button 
                 onClick={handleAiGenerate} 
                 className="w-full"
-                disabled={!aiPrompt.trim()}
+                disabled={!aiPrompt.trim() || isGenerating}
                 data-testid="button-ai-generate"
               >
                 <Sparkles className="mr-2 h-4 w-4" />
-                Generate with AI
+                {isGenerating ? "Generating..." : "Generate with AI"}
               </Button>
             </CardContent>
           </Card>
@@ -302,9 +358,9 @@ export default function CardEditor({ card, onSave, onAiGenerate, onExport }: Car
 
           {/* Actions */}
           <div className="space-y-3">
-            <Button onClick={handleSave} className="w-full" data-testid="button-save">
+            <Button onClick={handleSave} className="w-full" disabled={isSaving} data-testid="button-save">
               <Save className="mr-2 h-4 w-4" />
-              Save Card
+              {isSaving ? "Saving..." : "Save Card"}
             </Button>
             <Button variant="outline" onClick={handleExport} className="w-full" data-testid="button-export">
               <Download className="mr-2 h-4 w-4" />
