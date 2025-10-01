@@ -2,7 +2,30 @@
 
 ## Overview
 
-CardCraft AI is a full-stack SaaS application for creating and designing professional business cards with AI-powered generation capabilities. The platform features a sophisticated drag-and-drop canvas editor, template management system, and comprehensive design tools for creating customizable business cards. Users can generate designs through AI prompts or manually create cards using an advanced visual editor with support for text, shapes, images, QR codes, and background customization.
+CardCraft AI is a full-stack SaaS application for creating and designing professional business cards with AI-powered generation capabilities. The platform features a sophisticated drag-and-drop canvas editor, professional template library with 15+ templates, and comprehensive design tools for creating customizable business cards. Users can choose from professional templates across 7 categories, generate designs through AI prompts, or manually create cards using an advanced visual editor with support for text, shapes, images, QR codes, and background customization.
+
+## Recent Changes (October 2025)
+
+### Template System
+- **Professional Template Library**: Added 15 professionally designed templates across 7 categories:
+  - Business (2 templates)
+  - Creative (2 templates)
+  - Minimal (3 templates)
+  - Modern (3 templates)
+  - Professional (2 templates)
+  - Tech (2 templates)
+  - Artistic (2 templates)
+- **Template Gallery Page**: New browsable gallery with search, category filtering, and responsive grid layout
+- **Template-to-Editor Flow**: Seamless workflow from template selection to editor with pre-populated design data
+
+### User Experience Improvements
+- **Enhanced Homepage**: Replaced placeholder text with 4 professional example cards showcasing different styles
+- **Improved Dashboard**: Added beautiful empty state with 3 quick-start options:
+  - Browse Templates (access to 15+ templates)
+  - Generate with AI (AI-powered creation)
+  - Start from Scratch (blank canvas)
+- **Popular Templates Preview**: Dashboard shows first 4 templates with quick access to gallery
+- **Navigation Updates**: Added Templates link to main sidebar navigation
 
 ## User Preferences
 

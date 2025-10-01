@@ -15,17 +15,32 @@ import { useUndoRedo } from '@/hooks/useUndoRedo';
 
 interface AdvancedCanvasEditorProps {
   projectId?: string;
+  initialTemplate?: {
+    canvasData?: {
+      width?: number;
+      height?: number;
+      backgroundColor?: string;
+      elements?: any[];
+    };
+  };
   onSave?: (canvasData: any) => void;
 }
 
-export default function AdvancedCanvasEditor({ projectId, onSave }: AdvancedCanvasEditorProps) {
+export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSave }: AdvancedCanvasEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedElement, setSelectedElement] = useState<any>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [canvasSize, setCanvasSize] = useState({ width: 350, height: 200 }); // US Business Card default
+  
+  // Initialize from template or use defaults
+  const [canvasSize, setCanvasSize] = useState({ 
+    width: initialTemplate?.canvasData?.width || 350, 
+    height: initialTemplate?.canvasData?.height || 200 
+  });
   const [zoom, setZoom] = useState(100);
-  const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [backgroundColor, setBackgroundColor] = useState(
+    initialTemplate?.canvasData?.backgroundColor || '#ffffff'
+  );
   
   // Enhanced undo/redo with proper state management
   const {
@@ -35,7 +50,7 @@ export default function AdvancedCanvasEditor({ projectId, onSave }: AdvancedCanv
     redo,
     canUndo,
     canRedo
-  } = useUndoRedo<any[]>([], 100);
+  } = useUndoRedo<any[]>(initialTemplate?.canvasData?.elements || [], 100);
   
   const setElements = (newElements: any[]) => {
     saveToHistory(newElements, 100);
@@ -61,14 +76,17 @@ export default function AdvancedCanvasEditor({ projectId, onSave }: AdvancedCanv
     brightness: 100,
     contrast: 100,
     saturation: 100,
-    customWidth: 400,
-    customHeight: 240,
+    customWidth: initialTemplate?.canvasData?.width || 400,
+    customHeight: initialTemplate?.canvasData?.height || 240,
     aspectRatio: true
   });
   
   const [showSizePresets, setShowSizePresets] = useState(false);
   const [editingSize, setEditingSize] = useState(false);
-  const [tempSize, setTempSize] = useState({ width: 400, height: 240 });
+  const [tempSize, setTempSize] = useState({ 
+    width: initialTemplate?.canvasData?.width || 400, 
+    height: initialTemplate?.canvasData?.height || 240 
+  });
 
   // Premium font families
   const fontFamilies = [
@@ -464,10 +482,11 @@ export default function AdvancedCanvasEditor({ projectId, onSave }: AdvancedCanv
           }
           
           // Handle multi-line text with line height
-          const lines = element.content.split('\n');
+          const textContent = element.content || element.text || '';
+          const lines = textContent.split('\n');
           const lineHeight = (element.lineHeight || 1.2) * element.fontSize;
           
-          lines.forEach((line, index) => {
+          lines.forEach((line: string, index: number) => {
             const y = element.fontSize + (index * lineHeight);
             
             // Draw text stroke (outline) for visibility
