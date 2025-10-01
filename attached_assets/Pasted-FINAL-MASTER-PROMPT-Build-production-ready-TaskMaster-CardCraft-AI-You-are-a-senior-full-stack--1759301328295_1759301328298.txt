@@ -1,0 +1,445 @@
+FINAL MASTER PROMPT — Build production-ready TaskMaster / CardCraft AI
+
+You are a senior full-stack engineer + SaaS architect + UI/UX lead. I have one prompt left — build a working, production-ready version of TaskMaster / CardCraft AI implementing the features below. Produce runnable code, tests, infra instructions, and a Replit-friendly development + deployment plan. No background work — deliver the code and instructions now in this single response.
+
+
+
+GOALS (must be met)
+
+Template gallery with editable front + back templates (JSON-driven).
+
+3D live preview: CSS 3D flip for front/back (MVP) and link to canvas editor.
+
+Migrate editor to Fabric.js for robust z-order & object management.
+
+Frontend features: text stroke/shadow presets, contrast checker, bleed/safe guides, undo/redo.
+
+Cloudinary integration for media uploads.
+
+Mocked Cerebras AI endpoint that converts user description → layout JSON (3 prompt templates provided).
+
+Worker queue pattern for heavy jobs (export, AI) — use BullMQ + Redis or a simple job queue with Redis.
+
+Secure secrets management & environment variables.
+
+CI + deploy instructions (Replit for dev/demo, recommended production stack: Vercel + Cloud Run/GCP/AWS).
+
+Automated tests (unit + integration) and a QA checklist.
+
+Error handling, logging, health checks, and monitoring suggestions (Sentry + Prometheus/logs).
+
+Clear acceptance criteria and demo instructions.
+
+IMPORTANT: If anything below is ambiguous, do not guess. Instead produce the best-possible runnable implementation using reasonable defaults I can change later (document defaults). Provide inline comments where you made trade-offs.
+
+PROJECT DELIVERABLES (what to return now)
+
+Full codebase layout (files & major files' contents).
+
+README.md with run instructions for dev & production.
+
+Supabase SQL schema (tables: users, projects, templates, templates_versions, media, subscriptions placeholder).
+
+Frontend (React + TypeScript + Vite) with Fabric.js canvas editor and template gallery.
+
+Backend (Node.js + Express) with endpoints for templates, projects, media upload (Cloudinary), AI job enqueue/mock, export job.
+
+Worker module (BullMQ + Redis) for jobs.
+
+Mock Cerebras adapter that returns well-formed layout JSON for testing.
+
+Environment variables list and sample .env.example.
+
+Basic unit tests (Jest) for backend endpoints and template JSON validator.
+
+E2E smoke test (Playwright or Cypress) for core flow: create project from template → edit → export PNG.
+
+Replit integration notes (how to set up repl, secrets, Always On for worker, live preview link).
+
+Deployment instructions: Vercel for frontend; Cloud Run/AWS Fargate/Render for backend + worker; Redis + Cloudinary config.
+
+TECHNICAL SPECIFICATIONS (use these defaults unless otherwise specified)
+
+Frontend
+
+Framework: React + TypeScript + Vite
+
+UI: shadcn/ui + Tailwind CSS
+
+Canvas Engine: Fabric.js (wrap with FabricCanvas React component)
+
+State: React Query for server state; local undo/redo via Fabric's history + custom useUndoRedo hook
+
+Routing: React Router, routes: /, /templates, /create/:templateId?, /project/:id
+
+Exports: PNG + combined front/back export endpoint (backend)
+
+3D preview: CSS 3D flip (MVP): render front/back canvases as two faces of a 3D card with perspective and smooth animation. Provide Flip toggle and auto-sync between editor and 3D preview.
+
+Backend
+
+Node.js + Express + TypeScript
+
+DB: Supabase/Postgres (use node-postgres or Prisma/Drizzle — pick Drizzle ORM if already used). Provide SQL schema.
+
+Media: Cloudinary (direct upload signed URLs; backend returns upload signature). Provide fallback S3 instructions.
+
+Job Queue: BullMQ + Redis (simple job API). Worker processes handle: AI job calls, export to high-res PNG/PDF, Cloudinary transformations.
+
+Mock Cerebras: HTTP route /api/ai/mock-generate that returns layout JSON based on prompt examples. Later swap adapter to real Cerebras API.
+
+Security & Ops
+
+Use HTTPS, helmet, rate-limit, input validation (zod or Joi).
+
+Secrets: .env and indicate Replit secrets keys; recommend using Vault/Secret Manager for prod.
+
+Logging: use pino/winston; Sentry for errors; basic metrics via Prometheus or external logging (Datadog).
+
+CI: GitHub Actions: run lint, tests, build, and preview deploy to Replit/Vercel.
+
+Monitoring: health endpoint /health and readiness probe.
+
+DATABASE SCHEMA (Supabase SQL - essential tables)
+
+Provide supabase-schema.sql with:
+
+
+
+
+
+-- users (supabase auth used, but keep user meta)CREATE TABLE users (
+
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  email text UNIQUE,
+
+  display_name text,
+
+  created_at timestamptz DEFAULT now()
+
+);-- templatesCREATE TABLE templates (
+
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  slug text UNIQUE,
+
+  title text,
+
+  category text,
+
+  thumbnail_url text,
+
+  data jsonb, -- JSON structure with front/back, elements
+
+  created_by uuid REFERENCES users(id) NULL,
+
+  created_at timestamptz DEFAULT now()
+
+);-- projects (user-created editable projects)CREATE TABLE projects (
+
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  user_id uuid REFERENCES users(id),
+
+  template_id uuid REFERENCES templates(id),
+
+  name text,
+
+  data jsonb, -- actual canvas state (fabric JSON)
+
+  media jsonb, -- uploaded media refs
+
+  created_at timestamptz DEFAULT now(),
+
+  updated_at timestamptz DEFAULT now()
+
+);-- media (cloudinary references)CREATE TABLE media (
+
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  user_id uuid,
+
+  url text,
+
+  public_id text,
+
+  width int,
+
+  height int,
+
+  created_at timestamptz DEFAULT now()
+
+);
+
+TEMPLATE JSON SCHEMA (example - front/back model)
+
+Provide a validated JSON schema sample and a template example:
+
+
+
+
+
+{
+
+  "id": "uuid",
+
+  "title": "Photographer Classic Card",
+
+  "category": "visiting-card",
+
+  "thumbnail_url": "...",
+
+  "front": {
+
+    "width": 1050,
+
+    "height": 600,
+
+    "dpi": 300,
+
+    "elements": [
+
+      { "type": "image", "id": "img1", "x": 50, "y": 50, "width": 400, "height": 400, "src": "..." },
+
+      { "type": "text", "id": "t1", "x": 480, "y": 60, "text": "Aisha Khan", "fontSize": 34, "fontFamily": "Inter", "color":"#ffffff", "stroke":"#000000", "strokeWidth":2 }
+
+    ]
+
+  },
+
+  "back": {
+
+    "width": 1050,
+
+    "height": 600,
+
+    "elements": [...]
+
+  },
+
+  "safeArea": { "left": 30, "top": 30, "right": 30, "bottom": 30 },
+
+  "bleed": 5}
+
+Validate template JSON with ajv or zod on the backend.
+
+FABRIC.JS MIGRATION PLAN (component-level)
+
+FabricCanvas.tsx:
+
+Initialize fabric.Canvas with options: preserveObjectStacking = true, enableRetinaScaling = true.
+
+Provide APIs: loadFromFabricJSON, exportToPNG, getFabricJSON, addObject, updateObject, bringForward, sendBackwards, group, ungroup.
+
+Implement undo/redo via stack of JSON states (push on change with debounce).
+
+Update AdvancedCanvasEditor.tsx to use FabricCanvas API. Reuse existing UI panels for properties but wire events to fabric objects.
+
+Ensure text stroke/shadow UI in properties panel: presets (none, subtle, bold stroke, soft shadow).
+
+Add contrast checker util: compute contrast ratio (WCAG formula) and show warning overlay.
+
+3D CSS FLIP IMPLEMENTATION (MVP)
+
+Two canvases: #canvas-front, #canvas-back. Both render Fabric JSON (use toDataURL for texture if needed).
+
+Wrapper element .card-3d with perspective and .card-inner rotateY flip:
+
+.card-3d { perspective: 1200px }
+
+.card-inner { transform-style: preserve-3d; transition: transform 400ms; }
+
+.card-inner.flipped { transform: rotateY(180deg); }
+
+Front/back face styles use backface-visibility: hidden; position:absolute; and back is rotated rotateY(180deg).
+
+Sync: when user edits canvas, call fabricCanvas.toDataURL({ multiplier }) and update the corresponding face texture or img src.
+
+AI (CEREBRAS) Integration — Mock & prompts
+
+Create POST /api/ai/generate that enqueues a job. Provide a mock handler POST /api/ai/mock-generate that returns deterministic JSON based on prompt. Include three prompt templates:
+
+
+
+Layout generator
+
+
+
+System: You are a professional layout designer. Output valid JSON matching the template schema. Include front/back elements with positions.User: "Create a visiting card for 'Aisha Khan', wedding photographer. Include name, title, phone, website, camera icon. Style: dark, elegant."
+
+Palette + fonts
+
+
+
+System: Return a 5-color hex palette and 3 font pairings (heading, body), with short rationale.User: "Brand: GlowVille, audience: luxury skincare".
+
+Logo idea
+
+
+
+System: Return 3 simple logo concepts as inline SVG path data or a textual description and suggested colors.User: "Startup: CloudLedger - fintech".
+
+Mock adapter returns JSON and stores it under templates as a new generated variant.
+
+When ready to switch to real Cerebras, replace adapter with a service file cerebrasAdapter.ts and configure CEREBRAS_API_KEY env var.
+
+CLOUDINARY INTEGRATION
+
+Backend endpoint POST /api/media/sign returns signature & timestamp for direct client upload to Cloudinary.
+
+Client uploads directly using Cloudinary unsigned/signed upload (prefer signed).
+
+After upload, backend stores media record into media table.
+
+.env variables:
+
+
+
+
+
+CLOUDINARY_CLOUD_NAME=...CLOUDINARY_API_KEY=...CLOUDINARY_API_SECRET=...
+
+JOB QUEUE (BullMQ + Redis)
+
+Setup Redis URL in .env: REDIS_URL=redis://:password@host:port
+
+Worker responsibilities:
+
+AI job (call Cerebras adapter)
+
+Export job (render server-side image/PDF with Puppeteer or headless Electron)
+
+Optimize images (call Cloudinary transformations)
+
+Provide sample worker.ts and queue.ts.
+
+DEV & REPLIT INTEGRATION (exact steps)
+
+Dev on Replit (recommended for fast demo):
+
+
+
+Create a Replit project with the repo (link or import GitHub).
+
+In Replit Secrets, add: SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_KEY, CLOUDINARY_..., REDIS_URL, JWT_SECRET, CEREBRAS_API_KEY (for later).
+
+Enable “Always On” (paid) for backend worker process so BullMQ / Redis worker stays alive for demo jobs.
+
+Use Replit run command to start server and frontend concurrently (concurrently or use a small Procfile). Example replit.nix or repl run command provided in README.
+
+Use Replit multiplayer for live pair programming on UI polish.
+
+Production recommendation (after Replit demo):
+
+
+
+Frontend: Vercel
+
+Backend + worker: Cloud Run / Render / AWS Fargate
+
+Redis: Managed Redis (Upstash/Redis Cloud)
+
+DB: Supabase managed Postgres
+
+CDN & storage: Cloudinary or S3 + CloudFront
+
+CI / CD (GitHub Actions)
+
+Lint + Typecheck + Unit Tests on PR.
+
+On merge to main, build frontend and deploy to Vercel; backend build + push container to Container Registry then deploy to Cloud Run.
+
+Run integration smoke test post-deploy (Playwright).
+
+TESTS & QA (what to include now)
+
+Unit tests with Jest for:
+
+Template JSON validator (valid/invalid cases).
+
+Backend endpoints: /api/templates, /api/projects, /api/media/sign, /api/ai/mock-generate.
+
+Integration/E2E:
+
+Playwright test: user logs in (dev stub), selects template, loads editor, edits text, flips 3D, exports PNG (mock export), and confirms file exists in Cloudinary mock.
+
+Lint & TypeScript strict mode.
+
+ERROR HANDLING, LOGGING, MONITORING
+
+Use Sentry DSN env var for production error tracking.
+
+Use structured logs (pino).
+
+Expose /health and /metrics endpoints.
+
+Attach alerts for worker failures (Slack/webhook).
+
+ACCEPTANCE CRITERIA (must be demonstrated)
+
+User can open template gallery, pick a built-in template (front + back), click Edit → editor loads with template state.
+
+In editor, user can edit front and back via UI and see a live 3D flip preview reflecting edits instantly.
+
+Text stroke/shadow options available and contrast-check warnings shown when poor contrast detected.
+
+User can upload images to Cloudinary (signed), images are added to canvas.
+
+Fabric.js handles z-ordering, selection, grouping, and undo/redo works.
+
+User can click “Generate with AI” which calls mock Cerebras endpoint and returns a valid template variant loaded into editor.
+
+Export PNG works (either client-side via Fabric toDataURL or via export worker), and the backend returns a downloadable link.
+
+All unit tests pass; a basic E2E smoke test passes.
+
+README includes exact Replit setup & production deploy steps.
+
+SAMPLE README STUB (first lines to return)
+
+Include a README.md with:
+
+
+
+Project overview
+
+Quickstart dev (install, env, run)
+
+Replit setup snippet (secrets list & run command)
+
+Production deploy checklist
+
+How to swap mock Cerebras for real API
+
+Troubleshooting & FAQ
+
+PRIORITY CHECKLIST FOR DELIVERY (order you must implement & show)
+
+DB schema + migrations SQL.
+
+Backend endpoints + mock Cerebras.
+
+Job queue & worker skeleton.
+
+Cloudinary sign endpoint + media table.
+
+Frontend template gallery + Fabric.js editor wired to templates.
+
+3D CSS flip preview & sync logic.
+
+Export (client or worker) + storage link.
+
+Unit tests + E2E smoke test.
+
+README & deployment instructions (Replit & production).
+
+FINAL NOTES & Constraints
+
+Use reasonable defaults: canvas default size for visiting card (1050x600 px at 300 DPI), poster A4 2480x3508 px etc. Document all defaults.
+
+Keep code modular and well-commented. Wherever you made design/tech trade-offs, annotate in code and README.
+
+If anything truly cannot be implemented in the single response (e.g., external Cerebras real API call), implement a complete mock and provide exact replacement steps.
+
+Provide Dockerfiles for backend + worker and a simple docker-compose.yml for local dev (Redis + Postgres + backend + worker).
