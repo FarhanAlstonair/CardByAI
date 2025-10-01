@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit, Trash2, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Download, Sparkles, LayoutGrid } from 'lucide-react';
 import { cardProjectsApi, type CardProject } from '@/lib/supabase';
 import CanvasEditor from '@/components/editor/CanvasEditor';
+import { templates } from '@shared/templates';
 
 interface ProjectsDashboardProps {
   userId: string;
 }
 
 export default function ProjectsDashboard({ userId }: ProjectsDashboardProps) {
+  const [, setLocation] = useLocation();
   const [projects, setProjects] = useState<CardProject[]>([]);
   const [selectedProject, setSelectedProject] = useState<CardProject | null>(null);
   const [showEditor, setShowEditor] = useState(false);
@@ -113,18 +116,97 @@ export default function ProjectsDashboard({ userId }: ProjectsDashboardProps) {
       </div>
 
       {projects.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
-            <Plus className="h-8 w-8 text-muted-foreground" />
+        <div className="space-y-8">
+          {/* Empty state with quick actions */}
+          <div className="text-center py-12">
+            <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4">
+              <Plus className="h-10 w-10 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold mb-2">Start Creating Amazing Cards</h3>
+            <p className="text-muted-foreground mb-6">
+              Choose how you want to begin your design journey
+            </p>
+            
+            {/* Quick Start Options */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+              <Card className="group hover:shadow-lg transition-all cursor-pointer" onClick={() => setLocation('/templates')}>
+                <CardContent className="pt-6 text-center">
+                  <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <LayoutGrid className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h4 className="font-semibold mb-2">Browse Templates</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Choose from {templates.length}+ professional designs
+                  </p>
+                  <Button variant="outline" className="w-full">
+                    Explore Templates
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="group hover:shadow-lg transition-all cursor-pointer" onClick={() => setLocation('/ai-generate')}>
+                <CardContent className="pt-6 text-center">
+                  <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Sparkles className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <h4 className="font-semibold mb-2">Generate with AI</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Describe your vision and let AI create
+                  </p>
+                  <Button variant="outline" className="w-full">
+                    Use AI Designer
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="group hover:shadow-lg transition-all cursor-pointer" onClick={createNewProject}>
+                <CardContent className="pt-6 text-center">
+                  <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Plus className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h4 className="font-semibold mb-2">Start from Scratch</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Design your card from a blank canvas
+                  </p>
+                  <Button variant="outline" className="w-full">
+                    Blank Canvas
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-          <h3 className="text-lg font-semibold mb-2">No cards yet</h3>
-          <p className="text-muted-foreground mb-4">
-            Create your first professional business card
-          </p>
-          <Button onClick={createNewProject}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Your First Card
-          </Button>
+
+          {/* Popular Templates Preview */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold">Popular Templates</h3>
+              <Button variant="ghost" onClick={() => setLocation('/templates')}>
+                View All
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {templates.slice(0, 4).map((template) => (
+                <Card 
+                  key={template.id}
+                  className="group hover:shadow-lg transition-all cursor-pointer"
+                  onClick={() => setLocation(`/templates`)}
+                >
+                  <CardContent className="p-0">
+                    <div 
+                      className="h-32 flex items-center justify-center"
+                      style={{ background: template.thumbnail }}
+                    >
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                    </div>
+                    <div className="p-3">
+                      <h4 className="font-medium text-sm">{template.name}</h4>
+                      <p className="text-xs text-muted-foreground capitalize">{template.category}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

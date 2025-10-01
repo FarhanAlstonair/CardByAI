@@ -134,23 +134,81 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             </div>
           </div>
 
-          {/* Sample card preview */}
-          <div className="relative">
-            <div className="w-80 h-48 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-6 text-white shadow-xl">
-              <div className="h-full flex flex-col justify-between">
-                <div>
-                  <h3 className="text-xl font-bold">[Your Name]</h3>
-                  <p className="text-blue-100">[Your Title]</p>
-                  <p className="text-sm text-blue-200">[Your Company]</p>
+          {/* Sample card showcase - 3 different styles */}
+          <div className="space-y-4">
+            <p className="text-sm font-medium text-muted-foreground">Choose from 15+ professional templates</p>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Modern Gradient Card */}
+              <div className="relative group">
+                <div className="w-40 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-3 text-white shadow-lg transform transition-transform group-hover:scale-105">
+                  <div className="h-full flex flex-col justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold">Alex Chen</h3>
+                      <p className="text-xs text-blue-100">UX Designer</p>
+                    </div>
+                    <div className="text-xs text-blue-100">
+                      <p>alex@design.io</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-sm text-blue-100 space-y-1">
-                  <p>[your.email@company.com]</p>
-                  <p>[+1 (555) 000-0000]</p>
+                <div className="absolute -top-1 -right-1 bg-yellow-400 text-yellow-900 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+                  Modern
                 </div>
               </div>
-            </div>
-            <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-medium">
-              AI Generated
+
+              {/* Minimal Card */}
+              <div className="relative group">
+                <div className="w-40 h-24 bg-white border-2 border-gray-900 rounded-lg p-3 shadow-lg transform transition-transform group-hover:scale-105">
+                  <div className="h-full flex flex-col justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900">Sarah Kim</h3>
+                      <p className="text-xs text-gray-600">Photographer</p>
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      <p>hello@sarahkim.com</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute -top-1 -right-1 bg-green-400 text-green-900 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+                  Minimal
+                </div>
+              </div>
+
+              {/* Creative Card */}
+              <div className="relative group">
+                <div className="w-40 h-24 bg-gradient-to-br from-orange-500 to-pink-500 rounded-lg p-3 text-white shadow-lg transform transition-transform group-hover:scale-105">
+                  <div className="h-full flex flex-col justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold">Maria Garcia</h3>
+                      <p className="text-xs text-orange-100">Creative Director</p>
+                    </div>
+                    <div className="text-xs text-orange-100">
+                      <p>maria@creative.co</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute -top-1 -right-1 bg-purple-400 text-purple-900 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+                  Creative
+                </div>
+              </div>
+
+              {/* Professional Card */}
+              <div className="relative group">
+                <div className="w-40 h-24 bg-slate-900 rounded-lg p-3 text-white shadow-lg transform transition-transform group-hover:scale-105">
+                  <div className="h-full flex flex-col justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold">James Lee</h3>
+                      <p className="text-xs text-slate-300">Business Consultant</p>
+                    </div>
+                    <div className="text-xs text-slate-300">
+                      <p>james@consulting.com</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute -top-1 -right-1 bg-blue-400 text-blue-900 px-1.5 py-0.5 rounded-full text-[10px] font-medium">
+                  Pro
+                </div>
+              </div>
             </div>
           </div>
         </div>

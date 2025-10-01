@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,20 +15,40 @@ import ProjectsDashboard from "@/components/dashboard/ProjectsDashboard";
 import CardEditor from "@/components/cards/CardEditor";
 import AdvancedCanvasEditor from "@/components/editor/AdvancedCanvasEditor";
 import AdminDashboard from "@/components/admin/AdminDashboard";
+import TemplateGallery from "@/pages/TemplateGallery";
 import { useState, useEffect } from "react";
 import { api } from "@/services/api";
 import type { User } from "@shared/schema";
+import { getTemplateById } from "@shared/templates";
 
 function Router({ user }: { user: User | null }) {
+  const [, setLocation] = useLocation();
+
   if (!user) {
     return <LoginForm />;
   }
+
+  const handleSelectTemplate = (templateId: string) => {
+    const template = getTemplateById(templateId);
+    if (template) {
+      // Navigate to create page with template data
+      setLocation(`/create?templateId=${templateId}`);
+    }
+  };
 
   return (
     <Switch>
       {/* Main Dashboard */}
       <Route path="/" component={() => <ProjectsDashboard userId={user.id} />} />
       <Route path="/dashboard" component={() => <ProjectsDashboard userId={user.id} />} />
+      
+      {/* Templates */}
+      <Route path="/templates" component={() => (
+        <TemplateGallery 
+          userId={user.id}
+          onSelectTemplate={handleSelectTemplate}
+        />
+      )} />
       
       {/* Card Management */}
       <Route path="/cards" component={() => <ProjectsDashboard userId={user.id} />} />
