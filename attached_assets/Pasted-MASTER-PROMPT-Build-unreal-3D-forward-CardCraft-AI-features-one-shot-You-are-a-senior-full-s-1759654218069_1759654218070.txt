@@ -1,0 +1,203 @@
+MASTER PROMPT — Build “unreal”, 3D-forward CardCraft AI features (one-shot)
+
+You are a senior full-stack engineer + product designer + AI systems integrator. Using Cerebras as the primary AI provider, build (now) the full flow for AI-assisted premium templates and unreal 3D preview/export for CardCraft AI. Deliver runnable code, DB inserts, Cloudinary uploads (or mock URLs), backend endpoints, worker jobs, and UI changes. This prompt must produce everything required to demo locally or on Replit.
+
+Hard constraints (must obey):
+
+Use Cerebras API for all AI generation (layout JSON, SVG logos when possible, high-res raster fallbacks). If Cerebras is unavailable, return a deterministic mock response with the same schema. Do not call other providers unless Cerebras fails — then fallback to HuggingFace and document the failover.
+
+Create Premium Templates: 10 premium card templates for each of these business verticals: Tech Founder, Photographer, Lawyer, Real Estate Agent, Consultant, Restaurant Owner, Doctor, Fitness Trainer, Designer, Startup VP. Also create 5 poster templates for categories: Event Poster, Product Launch, Workshop, Sale, Conference.
+
+Store templates in DB table preset_collections -> Premium Templates and in templates with front/back JSON, preview_urls (Cloudinary), and export_hints (recommendedDPI, vectorPreferred).
+
+Provide endpoint POST /api/ai-generate that accepts { userId, promptText, style, targetFormatHints } and returns { jobId, templateId, previewUrl, status }. Enqueue heavy render jobs to worker.
+
+Provide an in-editor 3D preview using CSS 3D flip for MVP, and a Three.js textured rounded-rect preview option as an elevated feature.
+
+Implement export flow with modal options (formats: png, pdf, svg, tiff, jpeg; quality presets: preview/standard/high/advanced) and guarantee Advanced quality will not downscale: vector preserved, raster assets must meet required DPI or return actionable warnings and re-generate options.
+
+All heavy tasks (AI calls, export renders, vector conversions) must be queued (BullMQ + Redis) with progress updates and failure handling.
+
+All secrets must be read from env vars: CEREBRAS_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_KEY, CLOUDINARY_*, REDIS_URL. If any secret is missing, return an error with exact instructions to set it (do not assume).
+
+Provide full acceptance criteria and QA checklist at the end.
+
+What to produce (deliverables)
+
+Backend (TypeScript/Express)
+
+POST /api/ai-generate (accepts prompt, style; enqueue job).
+
+POST /api/ai/mock-generate (mock adapter returning deterministic layout JSON + assets if Cerebras not accessible).
+
+Template insert logic: create preset_collections entry 'premium-templates' and insert all templates into templates table with collection_id.
+
+Cloudinary upload helper and DB insertion for thumbnails & assets (or mock URLs if Cloudinary creds not set).
+
+Worker skeleton (worker.ts) using BullMQ to process: AI generation (call Cerebras), vector extraction, high-res export (PDF/PNG/TIFF), and cloud upload. Provide Dockerfile + docker-compose (Postgres + Redis + worker + server).
+
+Input validation (zod/ajv) and logging (pino). Health endpoint /health.
+
+Frontend (React + TypeScript + Vite)
+
+Template gallery section Premium Templates listing the generated templates (thumbnails, tags, badges).
+
+Editor integration: Fabric.js canvas with load/save from templates.front/back JSON. Supports full editing, front/back toggles.
+
+3D preview:
+
+MVP: CSS 3D flip showing front/back canvases (syncs live via toDataURL).
+
+Enhanced: Three.js textured card option (rounded rect, real-time material updates).
+
+/ai-generate flow UI: modal for user prompt, style selection (luxury/minimal/bold/creative), "Generate" button, job progress UI, and "Load into Editor" when ready.
+
+Export modal UI with format and quality presets and pre-export quality check report (list of raster assets and effective DPI vs requested).
+
+DB schema
+
+preset_collections (id, slug, title, desc)
+
+templates (id, slug, title, category, collection_id, front jsonb, back jsonb, thumbnail_url, preview_urls jsonb, export_hints jsonb, source)
+
+projects, media, ai_usage as described earlier.
+
+Provide SQL migrations.
+
+Template generation
+
+Programmatically create and insert the 10×10 business templates + 5×poster templates by calling Cerebras or the mock adapter. Each template must include:
+
+layout JSON (front/back) compatible with Fabric.js (coordinate system, elements array, SVG path for icons where possible).
+
+assets[] with { type: 'svg'|'png', url, dpi?: number, purpose }.
+
+thumbnail_url (2048×1152) uploaded to Cloudinary (or a mock URL).
+
+export_hints including recommendedDPI (>= 300, many templates recommend 600) and vectorPreferred boolean.
+
+AI prompts (Cerebras)
+
+Use structured system prompts that force Cerebras to return exact schema. Example system prompt (send with each job):
+
+System: You are a professional print & UI designer. Return EXACTLY one JSON object matching this schema: { front:{width,height,dpi,elements:[{type,id,x,y,width,height,rotation,style:{fontFamily,fontSize,color,stroke,strokeWidth,shadow},content,src,svgPath}]}, back:{...}, assets:[{type, url, svgPath, dpi, purpose}], palette:[hex], fonts:[{heading, body}], export_hints:{recommendedDPI,vectorPreferred,safeArea} }.
+User: "<user prompt text>"
+
+
+If Cerebras can output SVG path data for icons/logos, request svgPath. If not, request a high-res PNG (>=600 DPI) and mark vectorPreferred=false.
+
+Export guarantees
+
+Advanced preset: produce vector PDF with embedded fonts and bleed/crop marks where possible. For rasters, embed original lossless files; if raster assets are too small, do NOT upscale automatically — instead return requires_regen with an action to auto-enqueue a new AI regeneration job (user consent required).
+
+Replit / deployment
+
+Provide Replit run instructions & secrets to set. Provide recommended prod stack (Vercel + Cloud Run + managed Redis).
+
+Tests & QA
+
+Unit tests for template JSON validator.
+
+Integration test: generate template via /api/ai-generate (mock), insert to DB, load into editor, flip 3D, export Advanced PDF (mocked).
+
+QA checklist.
+
+Example /api/ai-generate request (frontend -> backend)
+POST /api/ai-generate
+{
+  "userId": "user-uuid",
+  "promptText": "Create a luxury matte black business card for 'John Doe', wedding photographer. Include name, title, portfolio URL, Instagram handle, and a simple gold camera icon. Feel premium, minimal, and embossed. Give front and back.",
+  "style": "luxury",
+  "targetFormatHints": { "preferredDPI": 600, "vectorPreferred": true, "canvasSize": { "width": 1050, "height": 600, "dpi": 300 } }
+}
+
+
+Expected immediate response:
+
+{ "jobId": "job-uuid", "status": "queued", "estimatedSeconds": 6 }
+
+
+Worker later updates job status; when done backend returns:
+
+{
+  "jobId":"job-uuid",
+  "status":"completed",
+  "templateId":"template-uuid",
+  "previewUrl":"https://res.cloudinary.com/.../photographer_premium_1_thumb.jpg",
+  "loadUrl":"/editor/load/template-uuid"
+}
+
+Pre-export quality check (UI behavior)
+
+When user selects Advanced/PDF/CMYK:
+
+The frontend requests a qualityReport from backend which lists all raster assets with effectiveDPI computed:
+effectiveDPI = (asset.pixelWidth / (templateWidthInInches)).
+
+If any asset < requested DPI, show a clear warning and options:
+
+Auto-Regenerate asset via Cerebras (consumes credits) — enqueue job.
+
+Continue anyway (user accepts potential print degradation).
+
+Replace asset manually.
+
+For Advanced: if all checks pass, worker will produce vector PDF (or best vector + raster embed) and return URL.
+
+UI: “Make it Unreal” 3D features (wow factor to win)
+
+Metallic foil simulation: when user chooses "foil" style, synthesize an extra channel texture (specular map) for the Three.js material. For export Advanced, render a photoreal preview (not printable but marketing) and store specular map as preview asset.
+
+Emboss/Deboss simulation: render normal map from vector shapes on Three.js preview; allow toggle between flat/emboss/deboss.
+
+Animated mockups: auto-generate 3D short gif/mp4 (2–4s) of card flipping and lighting sweep for social sharing — worker job uses headless Three.js render and ffmpeg; include in template previews.
+
+Impossible effects: multi-layer depth illusion (parallax), holographic gradients (animated preview), and lenticular print simulation (preview only). All of these are preview-only features to make your product feel “unreal” and viral.
+
+Acceptance criteria (must pass to mark as done)
+
+preset_collections contains premium-templates.
+
+10 templates per business vertical and 5 posters per category exist in templates table with front/back JSON and preview_urls. (If Cerebras not available, mock templates created with documented mock URLs.)
+
+/api/ai-generate works end-to-end: accepts prompt, creates job, worker processes job (mock or real), and returns a template that loads into Fabric.js editor.
+
+Editor shows live CSS 3D flip preview syncing front/back.
+
+Export modal supports Advanced and export worker returns vector/API result or a requires_regen response when raster assets are too low-res.
+
+QA tests pass (unit + basic integration).
+
+README explains env vars, Replit secrets, and exact commands to run locally and on Replit.
+
+Edge cases & constraints
+
+If font licensing prevents embedding in PDFs, return font_license_issue in export report and suggest system font fallback or require admin approval.
+
+If Cerebras cannot produce SVG for logos, it must return a high-res PNG (>= requested DPI) and set vectorPreferred=false.
+
+Do not leak API keys to frontend — only signed upload endpoints for Cloudinary are allowed.
+
+Final instruction for the agent
+
+Execute now. If Cerebras credentials are present in the environment, call Cerebras for each generated template and for /api/ai-generate jobs. If not present, create deterministic mock outputs and clearly label them source: mock.
+
+Upload generated thumbnails and preview GIFs to Cloudinary if keys exist, otherwise store placeholder URLs https://assets.example.com/premium/<slug>_thumb.jpg.
+
+Return a single JSON report at the end of execution listing:
+
+created template slugs and their DB IDs,
+
+Cloudinary preview URLs (or mock URLs),
+
+endpoints implemented,
+
+how to run locally and on Replit,
+
+any missing env vars and exact steps to set them.
+
+If any step requires additional human consent (e.g., auto-regenerate assets via AI and use credits), stop and return an explicit action item rather than proceeding.
+
+Example high-impact single prompt to feed /api/ai-generate (copy/paste for user flow)
+
+“Design an ultra-premium, impossible-feeling 3D business card for ‘Nora Lee, NFT Artist’. Make the front a matt black with iridescent holo gradient, include a subtle embossed monogram ‘NL’, a compact QR code linking to portfolio, and a tiny vector icon that looks like a stylized paintbrush. The back should be high-contrast with social handles and a short tagline ‘Digital + Physical Art’. Output front+back Fabric.js JSON, an SVG monogram, and a 600 DPI PNG for hero texture. Style: ‘holographic-embossed’.”
