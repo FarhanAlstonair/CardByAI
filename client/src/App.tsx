@@ -26,10 +26,6 @@ import { getTemplateById } from "@shared/templates";
 function Router({ user }: { user: User | null }) {
   const [, setLocation] = useLocation();
 
-  if (!user) {
-    return <LoginForm />;
-  }
-
   const handleSelectTemplate = (templateId: string) => {
     const template = getTemplateById(templateId);
     if (template) {
@@ -37,6 +33,17 @@ function Router({ user }: { user: User | null }) {
       setLocation(`/create?templateId=${templateId}`);
     }
   };
+
+  // Public routes accessible without authentication
+  if (!user) {
+    return (
+      <Switch>
+        <Route path="/premium-templates" component={PremiumTemplates} />
+        <Route path="/templates/:id/preview" component={TemplatePreview} />
+        <Route component={() => <LoginForm />} />
+      </Switch>
+    );
+  }
 
   return (
     <Switch>
@@ -122,6 +129,7 @@ function Router({ user }: { user: User | null }) {
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [location] = useLocation();
 
   useEffect(() => {
     checkAuth();
@@ -155,7 +163,14 @@ function App() {
     );
   }
 
-  if (!user) {
+  // Public routes that don't require authentication
+  const publicRoutes = ['/premium-templates', '/templates/:id/preview'];
+  const isPublicRoute = publicRoutes.some(route => {
+    const pattern = route.replace(/:[\w]+/g, '[^/]+');
+    return new RegExp(`^${pattern}$`).test(location);
+  });
+
+  if (!user && !isPublicRoute) {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
