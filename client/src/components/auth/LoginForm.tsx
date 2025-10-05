@@ -84,10 +84,10 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         <div className="space-y-8">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <div className="h-12 w-12 bg-[#de6712] rounded-xl flex items-center justify-center">
                 <CreditCard className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-3xl font-bold text-[#de6712]">
                 CardCraft AI
               </h1>
             </div>
@@ -98,8 +98,8 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
           <div className="space-y-6">
             <div className="flex items-start gap-4">
-              <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Sparkles className="h-5 w-5 text-blue-600" />
+              <div className="h-10 w-10 bg-[#de6712]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Sparkles className="h-5 w-5 text-[#de6712]" />
               </div>
               <div>
                 <h3 className="font-semibold mb-1">AI-Powered Generation</h3>
@@ -110,8 +110,8 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             </div>
 
             <div className="flex items-start gap-4">
-              <div className="h-10 w-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Zap className="h-5 w-5 text-purple-600" />
+              <div className="h-10 w-10 bg-[#de6712]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Zap className="h-5 w-5 text-[#de6712]" />
               </div>
               <div>
                 <h3 className="font-semibold mb-1">Drag & Drop Editor</h3>
@@ -122,8 +122,8 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
             </div>
 
             <div className="flex items-start gap-4">
-              <div className="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Shield className="h-5 w-5 text-green-600" />
+              <div className="h-10 w-10 bg-[#de6712]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Shield className="h-5 w-5 text-[#de6712]" />
               </div>
               <div>
                 <h3 className="font-semibold mb-1">Export & Share</h3>
@@ -231,8 +231,8 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
               
               <Tabs defaultValue="login" className="space-y-4">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                  <TabsTrigger value="login" className="data-[state=active]:bg-[#de6712] data-[state=active]:text-white">Login</TabsTrigger>
+                  <TabsTrigger value="signup" className="data-[state=active]:bg-[#de6712] data-[state=active]:text-white">Sign Up</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="login" className="space-y-4">
@@ -257,7 +257,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                         required
                       />
                     </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
+                    <Button type="submit" className="w-full bg-[#de6712] hover:bg-[#c55a0f] text-white" disabled={loading}>
                       {loading ? 'Logging in...' : 'Login'}
                     </Button>
                   </form>
@@ -294,7 +294,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                         required
                       />
                     </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
+                    <Button type="submit" className="w-full bg-[#de6712] hover:bg-[#c55a0f] text-white" disabled={loading}>
                       {loading ? 'Creating Account...' : 'Sign Up'}
                     </Button>
                   </form>
@@ -306,14 +306,14 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                   <span className="w-full border-t" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or</span>
+                  <span className="bg-background px-2 text-muted-foreground"></span>
                 </div>
               </div>
               
               <Button 
                 onClick={handleGoogleLogin}
                 variant="outline"
-                className="w-full"
+                className="w-full border-[#de6712] text-[#de6712] hover:bg-[#de6712] hover:text-white"
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>

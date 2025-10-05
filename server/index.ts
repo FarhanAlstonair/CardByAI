@@ -3,6 +3,10 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Load environment variables
+import { config } from 'dotenv';
+config();
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -64,14 +68,26 @@ app.use((req, res, next) => {
     throw err;
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
+  // Only serve static files in production
+  // In development, Vite dev server handles the frontend
+  if (app.get("env") !== "development") {
     serveStatic(app);
   }
+  
+  // Add a simple API health check
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+  
+  // Debug endpoint to check environment variables
+  app.get('/api/debug/env', (req, res) => {
+    res.json({
+      nodeEnv: process.env.NODE_ENV,
+      cerebrasKeyExists: !!process.env.CEREBRAS_API_KEY,
+      cerebrasKeyPrefix: process.env.CEREBRAS_API_KEY?.substring(0, 10),
+      allEnvKeys: Object.keys(process.env).filter(key => key.includes('CEREBRAS'))
+    });
+  });
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
   // Other ports are firewalled. Default to 5000 if not specified.

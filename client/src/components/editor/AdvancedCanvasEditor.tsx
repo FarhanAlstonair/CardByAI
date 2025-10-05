@@ -22,6 +22,12 @@ interface AdvancedCanvasEditorProps {
       backgroundColor?: string;
       elements?: any[];
     };
+    backData?: {
+      width?: number;
+      height?: number;
+      backgroundColor?: string;
+      elements?: any[];
+    };
   };
   onSave?: (canvasData: any) => void;
 }
@@ -42,6 +48,13 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
     initialTemplate?.canvasData?.backgroundColor || '#ffffff'
   );
   
+  // Front/Back state - declare before useUndoRedo
+  const [currentSide, setCurrentSide] = useState<'front' | 'back'>('front');
+  const [frontElements, setFrontElements] = useState(initialTemplate?.canvasData?.elements || []);
+  const [backElements, setBackElements] = useState(initialTemplate?.backData?.elements || []);
+  const [frontBackground, setFrontBackground] = useState(initialTemplate?.canvasData?.backgroundColor || '#ffffff');
+  const [backBackground, setBackBackground] = useState(initialTemplate?.backData?.backgroundColor || '#ffffff');
+  
   // Enhanced undo/redo with proper state management
   const {
     currentState: elements,
@@ -50,7 +63,34 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
     redo,
     canUndo,
     canRedo
-  } = useUndoRedo<any[]>(initialTemplate?.canvasData?.elements || [], 100);
+  } = useUndoRedo<any[]>(currentSide === 'front' ? frontElements : backElements, 100);
+  
+  // Update elements when side changes
+  useEffect(() => {
+    if (currentSide === 'front') {
+      setFrontElements(elements);
+    } else {
+      setBackElements(elements);
+    }
+  }, [elements, currentSide]);
+  
+  // Update background when side changes
+  useEffect(() => {
+    if (currentSide === 'front') {
+      setBackgroundColor(frontBackground);
+    } else {
+      setBackgroundColor(backBackground);
+    }
+  }, [currentSide]);
+  
+  // Update background state when color changes
+  useEffect(() => {
+    if (currentSide === 'front') {
+      setFrontBackground(backgroundColor);
+    } else {
+      setBackBackground(backgroundColor);
+    }
+  }, [backgroundColor]);
   
   const setElements = (newElements: any[]) => {
     saveToHistory(newElements, 100);
@@ -375,6 +415,11 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
   };
 
   const drawCanvas = (ctx: CanvasRenderingContext2D) => {
+    // Enable high-quality text rendering
+    ctx.textRenderingOptimization = 'optimizeQuality';
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    
     ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
     
     // Draw solid color or gradient background
@@ -473,8 +518,13 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
         ctx.translate(element.x, element.y);
         
         if (element.type === 'text') {
-          ctx.font = `${element.fontStyle || 'normal'} ${element.fontWeight || 'normal'} ${element.fontSize}px ${element.fontFamily}`;
+          // High-quality font rendering
+          ctx.font = `${element.fontStyle || 'normal'} ${element.fontWeight || 'normal'} ${element.fontSize}px '${element.fontFamily}', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
           ctx.textAlign = element.textAlign || 'left';
+          ctx.textBaseline = 'top';
+          
+          // Enable subpixel rendering
+          ctx.textRenderingOptimization = 'optimizeQuality';
           
           // Apply letter spacing
           if (element.letterSpacing) {
@@ -599,59 +649,50 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
   }, [elements, backgroundColor, canvasSize, backgroundImageSettings]);
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+    <div className="flex h-screen bg-background">
       {/* Left Panel - Tools */}
-      <div className="w-80 bg-[rgb(35,39,47)] border-r border-gray-700/30 shadow-xl overflow-y-auto">
+      <div className="w-80 bg-card border-r border-border shadow-sm overflow-y-auto">
         <div className="p-4 space-y-4">
-          <div className="pb-4 border-b border-gray-600/30">
-            <h2 className="text-xl font-bold text-white mb-1">
-              Design Studio
-            </h2>
-            <p className="text-xs text-gray-400">Professional design tools</p>
+          <div className="pb-4 border-b border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              <h2 className="text-xl font-semibold text-foreground font-sans">
+                Design Studio
+              </h2>
+            </div>
+            <p className="text-sm text-muted-foreground font-sans">Professional design tools at your fingertips</p>
           </div>
 
           <div className="w-full">
-            <div className="flex items-center bg-gray-800/50 rounded-lg p-1 mb-4">
+            <div className="flex items-center bg-secondary rounded-lg p-1 mb-4">
               <button
-                onClick={() => {
-                  console.log('Switching to elements tab');
-                  setActiveTab('elements');
-                }}
-                className={`flex-1 text-xs px-2 py-2 rounded-md transition-all duration-200 ${
-                  activeTab === 'elements' ? 'bg-blue-600 shadow-sm text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+                onClick={() => setActiveTab('elements')}
+                className={`flex-1 text-sm px-3 py-2 rounded-md transition-all duration-200 font-medium font-sans ${
+                  activeTab === 'elements' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Elements
               </button>
               <button
-                onClick={() => {
-                  console.log('Switching to text tab');
-                  setActiveTab('text');
-                }}
-                className={`flex-1 text-xs px-2 py-2 rounded-md transition-all duration-200 ${
-                  activeTab === 'text' ? 'bg-blue-600 shadow-sm text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+                onClick={() => setActiveTab('text')}
+                className={`flex-1 text-sm px-3 py-2 rounded-md transition-all duration-200 font-medium font-sans ${
+                  activeTab === 'text' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Text
               </button>
               <button
-                onClick={() => {
-                  console.log('Switching to design tab');
-                  setActiveTab('design');
-                }}
-                className={`flex-1 text-xs px-2 py-2 rounded-md transition-all duration-200 ${
-                  activeTab === 'design' ? 'bg-blue-600 shadow-sm text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+                onClick={() => setActiveTab('design')}
+                className={`flex-1 text-sm px-3 py-2 rounded-md transition-all duration-200 font-medium font-sans ${
+                  activeTab === 'design' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Design
               </button>
               <button
-                onClick={() => {
-                  console.log('Switching to layers tab');
-                  setActiveTab('layers');
-                }}
-                className={`flex-1 text-xs px-2 py-2 rounded-md transition-all duration-200 ${
-                  activeTab === 'layers' ? 'bg-blue-600 shadow-sm text-white' : 'text-gray-300 hover:text-white hover:bg-gray-700/50'
+                onClick={() => setActiveTab('layers')}
+                className={`flex-1 text-sm px-3 py-2 rounded-md transition-all duration-200 font-medium font-sans ${
+                  activeTab === 'layers' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Layers
@@ -683,35 +724,41 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
 
             {activeTab === 'elements' && (
               <div className="space-y-3 transition-all duration-200 ease-in-out">
-                <Card className="border-gray-600/30 rounded-xl shadow-sm bg-gray-800/50">
-                  <CardHeader className="pb-2 pt-3">
-                    <CardTitle className="text-sm font-medium text-gray-200">Shapes</CardTitle>
+                <Card className="border-border rounded-lg shadow-sm bg-card">
+                  <CardHeader className="pb-3 pt-4">
+                    <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Square className="h-4 w-4 text-primary" />
+                      Shapes
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-2 gap-2 pt-0">
-                    <Button variant="outline" onClick={() => addShape('rectangle')} className="h-12 rounded-xl border-gray-600 bg-gray-700/50 text-gray-200 hover:border-blue-400 hover:bg-blue-600/20 transition-all duration-200">
+                  <CardContent className="grid grid-cols-2 gap-3 pt-0">
+                    <Button variant="outline" onClick={() => addShape('rectangle')} className="h-12 rounded-lg border-border bg-card text-foreground hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200 font-medium font-sans">
                       <Square className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" onClick={() => addShape('roundedRect')} className="h-12 rounded-xl border-gray-600 bg-gray-700/50 text-gray-200 hover:border-blue-400 hover:bg-blue-600/20 transition-all duration-200">
+                    <Button variant="outline" onClick={() => addShape('roundedRect')} className="h-12 rounded-lg border-border bg-card text-foreground hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200 font-medium font-sans">
                       <Square className="h-4 w-4 rounded" />
                     </Button>
-                    <Button variant="outline" onClick={() => addShape('circle')} className="h-12 rounded-xl border-gray-600 bg-gray-700/50 text-gray-200 hover:border-blue-400 hover:bg-blue-600/20 transition-all duration-200">
+                    <Button variant="outline" onClick={() => addShape('circle')} className="h-12 rounded-lg border-border bg-card text-foreground hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200 font-medium font-sans">
                       <Circle className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" onClick={() => addShape('star')} className="h-12 rounded-xl border-gray-600 bg-gray-700/50 text-gray-200 hover:border-blue-400 hover:bg-blue-600/20 transition-all duration-200">
+                    <Button variant="outline" onClick={() => addShape('star')} className="h-12 rounded-lg border-border bg-card text-foreground hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200 font-medium font-sans">
                       <Star className="h-4 w-4" />
                     </Button>
                   </CardContent>
                 </Card>
 
-                <Card className="border-gray-600/30 rounded-xl shadow-sm bg-gray-800/50">
-                  <CardHeader className="pb-2 pt-3">
-                    <CardTitle className="text-sm font-medium text-gray-200">Media</CardTitle>
+                <Card className="border-border rounded-lg shadow-sm bg-card">
+                  <CardHeader className="pb-3 pt-4">
+                    <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <ImageIcon className="h-4 w-4 text-primary" />
+                      Media
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 pt-0">
+                  <CardContent className="space-y-3 pt-0">
                     <Button 
                       variant="outline" 
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full justify-start rounded-lg border-gray-600 bg-gray-700/50 text-gray-200 hover:border-blue-400 hover:bg-blue-600/20"
+                      className="w-full justify-start rounded-lg border-border bg-card text-foreground hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200 font-medium font-sans"
                     >
                       <Upload className="mr-2 h-4 w-4" />
                       Upload Image
@@ -719,7 +766,7 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
                     <Button 
                       variant="outline" 
                       onClick={() => bgImageInputRef.current?.click()}
-                      className="w-full justify-start rounded-lg border-gray-600 bg-gray-700/50 text-gray-200 hover:border-blue-400 hover:bg-blue-600/20"
+                      className="w-full justify-start rounded-lg border-border bg-card text-foreground hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200 font-medium font-sans"
                     >
                       <ImageIcon className="mr-2 h-4 w-4" />
                       Background Image
@@ -731,20 +778,23 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
 
             {activeTab === 'text' && (
               <div className="space-y-3 transition-all duration-200 ease-in-out">
-                <Card className="border-gray-600/30 rounded-xl shadow-sm bg-gray-800/50">
-                  <CardHeader className="pb-2 pt-3">
-                    <CardTitle className="text-sm font-medium text-gray-200">Text Styles</CardTitle>
+                <Card className="border-border rounded-lg shadow-sm bg-card">
+                  <CardHeader className="pb-3 pt-4">
+                    <CardTitle className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Type className="h-4 w-4 text-primary" />
+                      Text Styles
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 pt-0">
-                    <Button variant="outline" onClick={() => addAdvancedText('heading')} className="w-full justify-start rounded-lg border-gray-600 bg-gray-700/50 text-gray-200 hover:border-blue-400 hover:bg-blue-600/20">
+                  <CardContent className="space-y-3 pt-0">
+                    <Button variant="outline" onClick={() => addAdvancedText('heading')} className="w-full justify-start rounded-lg border-border bg-card text-foreground hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200 font-medium font-sans">
                       <Type className="mr-2 h-4 w-4" />
                       Heading
                     </Button>
-                    <Button variant="outline" onClick={() => addAdvancedText('subheading')} className="w-full justify-start rounded-lg border-gray-600 bg-gray-700/50 text-gray-200 hover:border-blue-400 hover:bg-blue-600/20">
+                    <Button variant="outline" onClick={() => addAdvancedText('subheading')} className="w-full justify-start rounded-lg border-border bg-card text-foreground hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200 font-medium font-sans">
                       <Type className="mr-2 h-4 w-4" />
                       Subheading
                     </Button>
-                    <Button variant="outline" onClick={() => addAdvancedText('body')} className="w-full justify-start rounded-lg border-gray-600 bg-gray-700/50 text-gray-200 hover:border-blue-400 hover:bg-blue-600/20">
+                    <Button variant="outline" onClick={() => addAdvancedText('body')} className="w-full justify-start rounded-lg border-border bg-card text-foreground hover:border-primary hover:bg-primary/5 hover:text-primary transition-all duration-200 font-medium font-sans">
                       <Type className="mr-2 h-4 w-4" />
                       Body Text
                     </Button>
@@ -1227,15 +1277,15 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
                     <CardTitle className="text-sm font-medium text-gray-700">Export Options</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 pt-0">
-                    <Button onClick={() => exportHighRes('web')} className="w-full">
+                    <Button onClick={() => exportHighRes('web')} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-sans">
                       <Download className="mr-2 h-4 w-4" />
                       Web Quality
                     </Button>
-                    <Button onClick={() => exportHighRes('print')} className="w-full">
+                    <Button onClick={() => exportHighRes('print')} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-sans">
                       <Download className="mr-2 h-4 w-4" />
                       Print Quality
                     </Button>
-                    <Button onClick={() => onSave?.({ elements, backgroundColor, canvasSize })} variant="outline" className="w-full">
+                    <Button onClick={() => onSave?.({ elements, backgroundColor, canvasSize })} variant="outline" className="w-full border-border hover:bg-primary/5 hover:text-primary hover:border-primary font-sans">
                       <Save className="mr-2 h-4 w-4" />
                       Save Project
                     </Button>
@@ -1260,7 +1310,7 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
                     size="sm" 
                     variant="outline" 
                     onClick={duplicateElement}
-                    className="flex-1 hover:bg-blue-50 border-blue-200 rounded-lg"
+                    className="flex-1 border-border hover:bg-primary/5 hover:text-primary hover:border-primary rounded-lg font-sans"
                   >
                     <Copy className="h-3 w-3 mr-1" />
                     Copy
@@ -1269,7 +1319,7 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
                     size="sm" 
                     variant="destructive" 
                     onClick={deleteElement}
-                    className="flex-1 bg-red-500 hover:bg-red-600 rounded-lg"
+                    className="flex-1 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-lg font-sans"
                   >
                     <Trash2 className="h-3 w-3 mr-1" />
                     Delete
@@ -1778,18 +1828,48 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
 
       {/* Canvas Area */}
       <div className="flex-1 flex flex-col">
-        <div className="bg-[rgb(35,39,47)] border-b border-gray-700/30 px-6 py-4 flex items-center justify-between shadow-sm">
+        <div className="bg-card border-b border-border px-6 py-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-6">
-            <h1 className="text-xl font-bold text-white">
-              CardCraft Studio
-            </h1>
             <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                <Sparkles className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold text-foreground font-sans">
+                  CardCraft Studio
+                </h1>
+                <p className="text-xs text-muted-foreground font-sans">Professional design editor</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Front/Back Toggle */}
+              <div className="flex items-center bg-secondary rounded-lg p-1">
+                <Button
+                  size="sm"
+                  onClick={() => setCurrentSide('front')}
+                  className={`text-sm px-4 py-2 rounded-md font-medium font-sans transition-all duration-200 ${
+                    currentSide === 'front' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Front
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => setCurrentSide('back')}
+                  className={`text-sm px-4 py-2 rounded-md font-medium font-sans transition-all duration-200 ${
+                    currentSide === 'back' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Back
+                </Button>
+              </div>
+              
               <Button 
                 size="sm" 
                 variant="outline" 
                 onClick={undo}
                 disabled={!canUndo}
-                className="flex items-center gap-2 border-gray-600 bg-gray-700/50 text-gray-200 hover:bg-gray-600 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+                className="flex items-center gap-2 border-border bg-card text-foreground hover:bg-primary/5 hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg font-sans"
               >
                 <Undo className="h-4 w-4" />
                 <span className="hidden sm:inline">Undo</span>
@@ -1799,7 +1879,7 @@ export default function AdvancedCanvasEditor({ projectId, initialTemplate, onSav
                 variant="outline" 
                 onClick={redo}
                 disabled={!canRedo}
-                className="flex items-center gap-2 border-gray-600 bg-gray-700/50 text-gray-200 hover:bg-gray-600 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+                className="flex items-center gap-2 border-border bg-card text-foreground hover:bg-primary/5 hover:border-primary hover:text-primary disabled:opacity-30 disabled:cursor-not-allowed rounded-lg font-sans"
               >
                 <Redo className="h-4 w-4" />
                 <span className="hidden sm:inline">Redo</span>

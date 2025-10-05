@@ -141,7 +141,7 @@ export default function TemplatePreview() {
           </Button>
           <Button
             size="lg"
-            onClick={() => setLocation(`/editor?template=${template.id}`)}
+            onClick={() => setLocation(`/create?templateId=${template.id}`)}
             data-testid="button-customize"
           >
             <Edit className="w-4 h-4 mr-2" />

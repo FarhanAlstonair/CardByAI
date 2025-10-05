@@ -181,7 +181,7 @@ export default function Dashboard() {
                 Welcome back, {user?.name}! Create and manage your AI-powered business cards.
               </p>
             </div>
-            <Button onClick={handleCreateCard} className="flex items-center gap-2">
+            <Button onClick={handleCreateCard} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground">
               <Plus className="h-4 w-4" />
               Create Card
             </Button>
@@ -274,6 +274,7 @@ export default function Dashboard() {
               variant={viewMode === "grid" ? "default" : "outline"}
               size="sm"
               onClick={() => setViewMode("grid")}
+              className={viewMode === "grid" ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "border-border hover:bg-primary/5 hover:text-primary"}
             >
               <Grid3X3 className="h-4 w-4" />
             </Button>
@@ -281,6 +282,7 @@ export default function Dashboard() {
               variant={viewMode === "list" ? "default" : "outline"}
               size="sm"
               onClick={() => setViewMode("list")}
+              className={viewMode === "list" ? "bg-primary hover:bg-primary/90 text-primary-foreground" : "border-border hover:bg-primary/5 hover:text-primary"}
             >
               <List className="h-4 w-4" />
             </Button>
@@ -289,18 +291,24 @@ export default function Dashboard() {
 
         {/* Cards Grid/List */}
         {filteredCards.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
-              <Plus className="h-8 w-8 text-muted-foreground" />
+          <div className="text-center py-16">
+            <div className="mx-auto w-32 h-32 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+              <Sparkles className="h-12 w-12 text-primary" />
             </div>
-            <h3 className="text-lg font-semibold mb-2">No cards yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first AI-powered business card to get started.
+            <h3 className="text-2xl font-bold mb-3">Ready to create amazing business cards?</h3>
+            <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+              Get started with our AI-powered design tools or choose from professional templates.
             </p>
-            <Button onClick={handleCreateCard}>
-              <Plus className="mr-2 h-4 w-4" />
-              Create Your First Card
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button onClick={handleCreateCard} className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Plus className="mr-2 h-4 w-4" />
+                Create New Card
+              </Button>
+              <Button variant="outline" onClick={() => window.location.href = '/ai-generate'} className="border-primary text-primary hover:bg-primary/5">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Try AI Generator
+              </Button>
+            </div>
           </div>
         ) : (
           <div className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
@@ -348,7 +356,7 @@ export default function Dashboard() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleEditCard(card)}
-                            className="flex-1"
+                            className="flex-1 border-border hover:bg-primary/5 hover:text-primary hover:border-primary"
                           >
                             <Edit className="h-3 w-3 mr-1" />
                             Edit
@@ -357,6 +365,7 @@ export default function Dashboard() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleExportCard(card)}
+                            className="border-border hover:bg-primary/5 hover:text-primary hover:border-primary"
                           >
                             <Download className="h-3 w-3" />
                           </Button>
@@ -364,7 +373,7 @@ export default function Dashboard() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleDeleteCard(card.id)}
-                            className="text-destructive hover:text-destructive"
+                            className="text-destructive hover:text-destructive border-border hover:bg-destructive/5 hover:border-destructive"
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
@@ -388,17 +397,17 @@ export default function Dashboard() {
                       
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary">{card.layout}</Badge>
-                        <Button size="sm" variant="outline" onClick={() => handleEditCard(card)}>
+                        <Button size="sm" variant="outline" onClick={() => handleEditCard(card)} className="border-border hover:bg-primary/5 hover:text-primary hover:border-primary">
                           <Edit className="h-3 w-3" />
                         </Button>
-                        <Button size="sm" variant="outline" onClick={() => handleExportCard(card)}>
+                        <Button size="sm" variant="outline" onClick={() => handleExportCard(card)} className="border-border hover:bg-primary/5 hover:text-primary hover:border-primary">
                           <Download className="h-3 w-3" />
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleDeleteCard(card.id)}
-                          className="text-destructive hover:text-destructive"
+                          className="text-destructive hover:text-destructive border-border hover:bg-destructive/5 hover:border-destructive"
                         >
                           <Trash2 className="h-3 w-3" />
                         </Button>

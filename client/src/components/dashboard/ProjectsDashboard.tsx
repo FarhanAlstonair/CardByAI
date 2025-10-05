@@ -82,7 +82,7 @@ export default function ProjectsDashboard({ userId }: ProjectsDashboardProps) {
           <h1 className="text-xl font-semibold">
             {selectedProject?.title || 'New Card'}
           </h1>
-          <Button variant="outline" onClick={() => setShowEditor(false)}>
+          <Button variant="outline" onClick={() => setShowEditor(false)} className="border-border hover:bg-primary/5 hover:text-primary hover:border-primary">
             Back to Projects
           </Button>
         </div>
@@ -109,7 +109,7 @@ export default function ProjectsDashboard({ userId }: ProjectsDashboardProps) {
           <h1 className="text-3xl font-bold">My Business Cards</h1>
           <p className="text-muted-foreground">Create and manage your professional cards</p>
         </div>
-        <Button onClick={createNewProject}>
+        <Button onClick={createNewProject} className="bg-primary hover:bg-primary/90 text-primary-foreground">
           <Plus className="mr-2 h-4 w-4" />
           New Card
         </Button>
@@ -118,12 +118,12 @@ export default function ProjectsDashboard({ userId }: ProjectsDashboardProps) {
       {projects.length === 0 ? (
         <div className="space-y-8">
           {/* Empty state with quick actions */}
-          <div className="text-center py-12">
-            <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-4">
-              <Plus className="h-10 w-10 text-white" />
+          <div className="text-center py-16">
+            <div className="mx-auto w-32 h-32 bg-primary/10 rounded-full flex items-center justify-center mb-6">
+              <Sparkles className="h-12 w-12 text-primary" />
             </div>
-            <h3 className="text-2xl font-bold mb-2">Start Creating Amazing Cards</h3>
-            <p className="text-muted-foreground mb-6">
+            <h3 className="text-3xl font-bold mb-3">Start Creating Amazing Cards</h3>
+            <p className="text-muted-foreground mb-8 text-lg">
               Choose how you want to begin your design journey
             </p>
             
@@ -138,7 +138,7 @@ export default function ProjectsDashboard({ userId }: ProjectsDashboardProps) {
                   <p className="text-sm text-muted-foreground mb-4">
                     Choose from {templates.length}+ professional designs
                   </p>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full border-border hover:bg-primary/5 hover:text-primary hover:border-primary">
                     Explore Templates
                   </Button>
                 </CardContent>
@@ -153,7 +153,7 @@ export default function ProjectsDashboard({ userId }: ProjectsDashboardProps) {
                   <p className="text-sm text-muted-foreground mb-4">
                     Describe your vision and let AI create
                   </p>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full border-border hover:bg-primary/5 hover:text-primary hover:border-primary">
                     Use AI Designer
                   </Button>
                 </CardContent>
@@ -168,7 +168,7 @@ export default function ProjectsDashboard({ userId }: ProjectsDashboardProps) {
                   <p className="text-sm text-muted-foreground mb-4">
                     Design your card from a blank canvas
                   </p>
-                  <Button variant="outline" className="w-full">
+                  <Button variant="outline" className="w-full border-border hover:bg-primary/5 hover:text-primary hover:border-primary">
                     Blank Canvas
                   </Button>
                 </CardContent>
@@ -180,7 +180,7 @@ export default function ProjectsDashboard({ userId }: ProjectsDashboardProps) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-semibold">Popular Templates</h3>
-              <Button variant="ghost" onClick={() => setLocation('/templates')}>
+              <Button variant="ghost" onClick={() => setLocation('/templates')} className="text-primary hover:bg-primary/5">
                 View All
               </Button>
             </div>
@@ -228,13 +228,13 @@ export default function ProjectsDashboard({ userId }: ProjectsDashboardProps) {
                       setSelectedProject(project);
                       setShowEditor(true);
                     }}
-                    className="flex-1"
+                    className="flex-1 border-border hover:bg-primary/5 hover:text-primary hover:border-primary"
                   >
                     <Edit className="mr-1 h-3 w-3" />
                     Edit
                   </Button>
                   
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" className="border-border hover:bg-primary/5 hover:text-primary hover:border-primary">
                     <Download className="h-3 w-3" />
                   </Button>
                   
@@ -242,7 +242,7 @@ export default function ProjectsDashboard({ userId }: ProjectsDashboardProps) {
                     size="sm"
                     variant="outline"
                     onClick={() => deleteProject(project.id)}
-                    className="text-destructive hover:text-destructive"
+                    className="text-destructive hover:text-destructive border-border hover:bg-destructive/5 hover:border-destructive"
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>

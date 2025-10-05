@@ -236,7 +236,7 @@ export default function UserDashboard({
           <p className="text-muted-foreground">Create and manage your professional business cards</p>
         </div>
         <Button onClick={onCreateNew} data-testid="button-create-card">
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="mr-2 h-4 w-4 " />
           Create New Card
         </Button>
       </div>

@@ -3,6 +3,41 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Test Cerebras API directly
+  app.get('/api/test-cerebras', async (req, res) => {
+    try {
+      if (!process.env.CEREBRAS_API_KEY) {
+        return res.json({ error: 'No Cerebras API key configured' });
+      }
+      
+      const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.CEREBRAS_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'llama3.1-8b',
+          messages: [{
+            role: 'user',
+            content: 'Enhance this prompt: "develop a business card"'
+          }],
+          max_tokens: 100,
+          temperature: 0.7
+        })
+      });
+      
+      const data = await response.json();
+      res.json({ 
+        status: response.status, 
+        data,
+        apiKey: process.env.CEREBRAS_API_KEY ? 'Present' : 'Missing'
+      });
+    } catch (error) {
+      res.json({ error: error.message });
+    }
+  });
+
   // Test API Keys endpoint
   app.get('/api/test-keys', async (req, res) => {
     const results = {
@@ -255,6 +290,183 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/cards/:id', async (req, res) => {
     await storage.deleteCard(req.params.id);
     res.json({ success: true });
+  });
+
+  // AI Prompt Enhancement endpoint
+  app.post('/api/ai/enhance-prompt', async (req, res) => {
+    try {
+      const { prompt, style } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required' });
+      }
+      
+      console.log('Cerebras API Key available:', !!process.env.CEREBRAS_API_KEY);
+      console.log('Cerebras API Key (first 10 chars):', process.env.CEREBRAS_API_KEY?.substring(0, 10));
+      
+      if (process.env.CEREBRAS_API_KEY) {
+        try {
+          const systemPrompt = `You are a professional business card design consultant. Take the user's basic request and enhance it into a detailed, professional prompt for business card generation.
+          
+          Transform this request: "${prompt}"
+          Style preference: ${style}
+          
+          Return ONLY a single enhanced prompt that includes:
+          - Specific profession/role details
+          - Company type and industry context
+          - Professional contact information structure
+          - Design preferences based on the style
+          - Any missing professional elements
+          
+          Make it detailed and professional while keeping the user's original intent.`;
+          
+          console.log('Making Cerebras API call...');
+          
+          const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.CEREBRAS_API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: 'llama3.1-8b',
+              messages: [{
+                role: 'user',
+                content: systemPrompt
+              }],
+              max_tokens: 300,
+              temperature: 0.7
+            })
+          });
+          
+          console.log('Cerebras response status:', response.status);
+          
+          if (response.ok) {
+            const aiData = await response.json();
+            console.log('Cerebras response data:', aiData);
+            const enhancedPrompt = aiData.choices[0]?.message?.content?.trim() || prompt;
+            
+            return res.json({
+              success: true,
+              enhancedPrompt,
+              originalPrompt: prompt,
+              source: 'cerebras'
+            });
+          } else {
+            const errorText = await response.text();
+            console.error('Cerebras API error response:', response.status, errorText);
+          }
+        } catch (error) {
+          console.error('Cerebras prompt enhancement error:', error);
+        }
+      } else {
+        console.log('No Cerebras API key found, using fallback');
+      }
+      
+      // Fallback enhancement
+      res.json({
+        success: true,
+        enhancedPrompt: prompt,
+        originalPrompt: prompt,
+        source: 'fallback'
+      });
+    } catch (error) {
+      console.error('Prompt enhancement error:', error);
+      res.status(500).json({ error: 'Enhancement failed' });
+    }
+  });
+
+  // AI Generation endpoint for frontend
+  app.post('/api/ai/generate-card', async (req, res) => {
+    try {
+      const { prompt, originalPrompt, style } = req.body;
+      
+      if (!prompt || !style) {
+        return res.status(400).json({ error: 'Prompt and style are required' });
+      }
+      
+      if (process.env.CEREBRAS_API_KEY) {
+        try {
+          const { cerebrasService } = await import('./services/cerebras');
+          
+          const systemPrompt = `Create a professional business card design based on this request: "${prompt}". Style: ${style}.
+          
+Return a JSON object with these fields:
+          {
+            "name": "Full Name",
+            "jobTitle": "Job Title",
+            "company": "Company Name",
+            "email": "email@company.com",
+            "phone": "+1 (555) 123-4567",
+            "website": "https://company.com",
+            "address": "City, State",
+            "backgroundColor": "#ffffff",
+            "textColor": "#000000",
+            "accentColor": "#de6712",
+            "layout": "modern"
+          }`;
+          
+          const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.CEREBRAS_API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              model: 'llama3.1-8b',
+              messages: [{
+                role: 'user',
+                content: systemPrompt
+              }],
+              max_tokens: 500,
+              temperature: 0.7
+            })
+          });
+          
+          if (response.ok) {
+            const aiData = await response.json();
+            const content = aiData.choices[0]?.message?.content || '';
+            
+            try {
+              const parsedData = JSON.parse(content);
+              return res.json({
+                success: true,
+                data: parsedData,
+                source: 'cerebras'
+              });
+            } catch (parseError) {
+              console.error('Failed to parse Cerebras response:', content);
+            }
+          }
+        } catch (error) {
+          console.error('Cerebras API error:', error);
+        }
+      }
+      
+      // Fallback response
+      const fallbackData = {
+        name: 'John Smith',
+        jobTitle: 'Software Engineer',
+        company: 'TechCorp Inc.',
+        email: 'john@techcorp.com',
+        phone: '+1 (555) 123-4567',
+        website: 'https://techcorp.com',
+        address: 'San Francisco, CA',
+        backgroundColor: '#ffffff',
+        textColor: '#1f2937',
+        accentColor: '#de6712',
+        layout: style || 'modern'
+      };
+      
+      res.json({
+        success: true,
+        data: fallbackData,
+        source: 'fallback'
+      });
+    } catch (error) {
+      console.error('AI generation error:', error);
+      res.status(500).json({ error: 'Generation failed' });
+    }
   });
 
   // AI Generation endpoint with real Cerebras integration

@@ -18,6 +18,8 @@ import AdminDashboard from "@/components/admin/AdminDashboard";
 import TemplateGallery from "@/pages/TemplateGallery";
 import PremiumTemplates from "@/pages/PremiumTemplates";
 import TemplatePreview from "@/pages/TemplatePreview";
+import AIGenerateForm from "@/components/AIGenerateForm";
+import CreateEditor from "@/components/CreateEditor";
 import { useState, useEffect } from "react";
 import { api } from "@/services/api";
 import type { User } from "@shared/schema";
@@ -63,24 +65,11 @@ function Router({ user }: { user: User | null }) {
       
       {/* Card Management */}
       <Route path="/cards" component={() => <ProjectsDashboard userId={user.id} />} />
-      <Route path="/create" component={() => {
-        const params = new URLSearchParams(window.location.search);
-        const templateId = params.get('templateId');
-        const template = templateId ? getTemplateById(templateId) : null;
-        
-        return (
-          <AdvancedCanvasEditor
-            initialTemplate={template || undefined}
-            onSave={async (canvasData) => {
-              console.log('Saving design:', canvasData);
-            }}
-          />
-        );
-      }} />
+      <Route path="/create" component={CreateEditor} />
       <Route path="/ai-generate" component={() => (
-        <AdvancedCanvasEditor
-          onSave={async (canvasData) => {
-            console.log('Saving AI design:', canvasData);
+        <AIGenerateForm
+          onGenerate={(prompt, style) => {
+            console.log('Generating with:', prompt, style);
           }}
         />
       )} />
