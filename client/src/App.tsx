@@ -16,6 +16,8 @@ import CardEditor from "@/components/cards/CardEditor";
 import AdvancedCanvasEditor from "@/components/editor/AdvancedCanvasEditor";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 import TemplateGallery from "@/pages/TemplateGallery";
+import PremiumTemplates from "@/pages/PremiumTemplates";
+import TemplatePreview from "@/pages/TemplatePreview";
 import { useState, useEffect } from "react";
 import { api } from "@/services/api";
 import type { User } from "@shared/schema";
@@ -49,6 +51,8 @@ function Router({ user }: { user: User | null }) {
           onSelectTemplate={handleSelectTemplate}
         />
       )} />
+      <Route path="/premium-templates" component={PremiumTemplates} />
+      <Route path="/templates/:id/preview" component={TemplatePreview} />
       
       {/* Card Management */}
       <Route path="/cards" component={() => <ProjectsDashboard userId={user.id} />} />

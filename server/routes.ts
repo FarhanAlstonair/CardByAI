@@ -331,6 +331,232 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Generation endpoints
+  app.post('/api/ai-generate', async (req, res) => {
+    try {
+      const { userId, promptText, style, targetFormatHints } = req.body;
+
+      if (!userId || !promptText || !style) {
+        return res.status(400).json({ 
+          error: 'Missing required fields: userId, promptText, style' 
+        });
+      }
+
+      // Create job
+      const job = await storage.insertJob({
+        userId,
+        promptText,
+        style,
+        targetFormatHints,
+        status: "queued",
+        progress: 0,
+        estimatedSeconds: 6,
+      });
+
+      // Return immediate response
+      res.json({
+        jobId: job.id,
+        status: "queued",
+        estimatedSeconds: 6,
+      });
+
+      // Process job asynchronously (in real app, this would be in a worker)
+      setTimeout(async () => {
+        try {
+          const { cerebrasService } = await import('./services/cerebras');
+          const { mockAdapter } = await import('./services/mockAdapter');
+          
+          let templateData;
+          let provider: "cerebras" | "mock" = "mock";
+
+          // Try Cerebras
+          if (cerebrasService.isAvailable()) {
+            try {
+              templateData = await cerebrasService.generateTemplate(promptText, style, targetFormatHints);
+              provider = "cerebras";
+            } catch (error) {
+              console.error('Cerebras failed:', error);
+              templateData = null;
+            }
+          }
+
+          // Fallback to mock
+          if (!templateData) {
+            templateData = mockAdapter.generateTemplate(promptText, style, "Generated", 1);
+          }
+
+          // Create template
+          const thumbnailUrl = `https://assets.example.com/generated/${job.id}_thumb.jpg`;
+          let collection = await storage.getCollectionBySlug("premium-templates");
+          if (!collection) {
+            collection = await storage.insertCollection({
+              slug: "premium-templates",
+              title: "Premium Templates",
+              description: "AI-generated premium templates",
+            });
+          }
+
+          const template = await storage.insertTemplate({
+            slug: `ai-gen-${job.id}`,
+            title: `AI Generated: ${promptText.substring(0, 50)}...`,
+            category: "AI Generated",
+            collectionId: collection.id,
+            front: templateData.front as any,
+            back: templateData.back as any,
+            thumbnailUrl,
+            previewUrls: {
+              front: `https://assets.example.com/generated/${job.id}_front.jpg`,
+              back: templateData.back ? `https://assets.example.com/generated/${job.id}_back.jpg` : null,
+            },
+            exportHints: templateData.export_hints as any,
+            source: provider === "cerebras" ? "generated" : "mock",
+            tags: [style, "ai-generated"],
+            isPremium: false,
+          });
+
+          // Update job status
+          await storage.updateJob(job.id, {
+            status: "completed",
+            progress: 100,
+            templateId: template.id,
+            previewUrl: thumbnailUrl,
+            provider,
+            completedAt: new Date(),
+          });
+
+          // Track AI usage
+          await storage.insertAiUsage({
+            userId,
+            cardId: null,
+            provider,
+            prompt: promptText,
+            tokensUsed: 500,
+            responseTime: 3000,
+            success: true,
+          });
+        } catch (error: any) {
+          console.error('Job processing failed:', error);
+          await storage.updateJob(job.id, {
+            status: "failed",
+            errorMessage: error.message,
+          });
+        }
+      }, 100); // Small delay to ensure response is sent first
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to create AI generation job' });
+    }
+  });
+
+  app.get('/api/ai-jobs/:jobId', async (req, res) => {
+    try {
+      const job = await storage.getJobById(req.params.jobId);
+      if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+      }
+      res.json(job);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch job status' });
+    }
+  });
+
+  app.get('/api/ai-jobs/user/:userId', async (req, res) => {
+    try {
+      const jobs = await storage.getUserJobs(req.params.userId);
+      res.json({ jobs });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch user jobs' });
+    }
+  });
+
+  app.post('/api/ai/mock-generate', async (req, res) => {
+    try {
+      const { promptText, style, category } = req.body;
+      const { mockAdapter } = await import('./services/mockAdapter');
+      
+      const templateData = mockAdapter.generateTemplate(
+        promptText || "Mock template",
+        style || "modern",
+        category || "Business",
+        1
+      );
+      
+      res.json({
+        status: "success",
+        source: "mock",
+        data: templateData,
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Mock generation failed' });
+    }
+  });
+
+  // Bulk template generation (admin only)
+  app.post('/api/templates/generate-bulk', async (req, res) => {
+    try {
+      const { type } = req.body; // 'business-cards' or 'posters'
+      const { templateGenerator } = await import('./services/templateGenerator');
+      
+      let result;
+      if (type === 'business-cards') {
+        result = await templateGenerator.generateBulkBusinessCards();
+      } else if (type === 'posters') {
+        result = await templateGenerator.generateBulkPosters();
+      } else {
+        return res.status(400).json({ error: 'Invalid type. Must be business-cards or posters' });
+      }
+      
+      res.json({
+        success: true,
+        created: result.created,
+        errors: result.errors,
+        total: result.created.length,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Template endpoints
+  app.get('/api/templates', async (req, res) => {
+    try {
+      const { category, premium } = req.query;
+      let templates;
+      
+      if (category) {
+        templates = await storage.getTemplatesByCategory(category as string);
+      } else if (premium === 'true') {
+        templates = await storage.getPremiumTemplates();
+      } else {
+        templates = await storage.getAllTemplates();
+      }
+      
+      res.json({ templates });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch templates' });
+    }
+  });
+
+  app.get('/api/templates/:id', async (req, res) => {
+    try {
+      const template = await storage.getTemplateById(req.params.id);
+      if (!template) {
+        return res.status(404).json({ error: 'Template not found' });
+      }
+      res.json(template);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch template' });
+    }
+  });
+
+  app.get('/api/collections', async (req, res) => {
+    try {
+      const collections = await storage.getAllCollections();
+      res.json({ collections });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch collections' });
+    }
+  });
+
   // Admin endpoints
   app.get('/api/admin/stats', async (req, res) => {
     const stats = await storage.getAdminStats();

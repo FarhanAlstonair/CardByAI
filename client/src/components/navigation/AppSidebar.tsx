@@ -8,7 +8,8 @@ import {
   Sparkles,
   LogOut,
   User as UserIcon,
-  LayoutGrid
+  LayoutGrid,
+  Crown
 } from "lucide-react";
 import {
   Sidebar,
@@ -55,6 +56,12 @@ export function AppSidebar({ user, onLogout }: AppSidebarProps) {
       url: "/templates",
       icon: LayoutGrid,
       isActive: location === "/templates"
+    },
+    {
+      title: "Premium Templates",
+      url: "/premium-templates",
+      icon: Crown,
+      isActive: location === "/premium-templates" || location.startsWith("/templates/")
     },
     {
       title: "My Designs",

@@ -50,6 +50,10 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize app (generate templates if needed)
+  const { initializeApp } = await import("./init");
+  await initializeApp();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
